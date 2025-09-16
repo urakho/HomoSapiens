@@ -258,10 +258,10 @@ function updateMobileControlsPosition() {
     const isSmallScreen = Math.min(canvas.width, canvas.height) < 600;
     
     // Адаптивные размеры
-    const baseMargin = isSmallScreen ? 15 : 20;
+    const baseMargin = isSmallScreen ? 20 : 25; // Увеличили отступы
     
     // Адаптивные размеры кнопок
-    const menuButtonRadius = isSmallScreen ? 25 : 30;
+    const menuButtonRadius = isSmallScreen ? 30 : 35; // Увеличили размер кнопки
     
     // Обновляем размеры в объекте управления (убираем джойстик и лишние кнопки)
     mobileControls.buttons.menu.radius = menuButtonRadius;
@@ -275,6 +275,17 @@ function updateMobileControlsPosition() {
     mobileControls.buttons.menu.x = canvas.width - menuButtonRadius - baseMargin;
     mobileControls.buttons.menu.y = menuButtonRadius + baseMargin;
     mobileControls.buttons.menu.visible = true;
+    
+    // Отладка позиции кнопки меню (только в первый раз)
+    if (!window.menuButtonDebugShown) {
+        console.log('=== MENU BUTTON POSITION ===');
+        console.log('Canvas size:', canvas.width, 'x', canvas.height);
+        console.log('Button radius:', menuButtonRadius);
+        console.log('Base margin:', baseMargin);
+        console.log('Button position: x =', mobileControls.buttons.menu.x, ', y =', mobileControls.buttons.menu.y);
+        console.log('============================');
+        window.menuButtonDebugShown = true;
+    }
 }
 
 // Функция для проверки статуса загрузки всех изображений
@@ -2068,12 +2079,19 @@ let maxPopulation = 5; // Начальный лимит населения
 
 function drawResources() {
     // Проверяем мобильный режим более надежно
-    // Используем комбинацию факторов: флаг showMobileControls, размер экрана, соотношение сторон и touch support
+    // Приоритет флагу showMobileControls, затем другие факторы
     const screenRatio = window.innerWidth / window.innerHeight;
     const isPortraitMode = screenRatio < 1.2; // Портретная ориентация или почти квадратный экран
     const isSmallScreen = window.innerWidth <= 1024 || canvas.width <= 1024;
     const hasTouchSupport = 'ontouchstart' in window || navigator.maxTouchPoints > 0;
-    const isMobileDevice = showMobileControls || isSmallScreen || (isPortraitMode && window.innerWidth <= 1200) || (hasTouchSupport && window.innerWidth <= 1366);
+    
+    // Если включен мобильный режим - всегда мобильная версия
+    const isMobileDevice = showMobileControls || 
+                          isSmallScreen || 
+                          (isPortraitMode && window.innerWidth <= 1200) || 
+                          (hasTouchSupport && window.innerWidth <= 1366) ||
+                          (window.innerWidth <= 800) || // Дополнительная проверка для узких экранов
+                          (canvas.width <= 800); // И дополнительная проверка canvas
     
     const fontSize = isMobileDevice ? 14 : 20;
     const resourceHeight = isMobileDevice ? 40 : 60;
@@ -2081,7 +2099,7 @@ function drawResources() {
     
     // Отладка (только в первый раз)
     if (!window.resourceDebugShown) {
-        console.log('Resource bar debug:');
+        console.log('=== RESOURCE BAR DEBUG ===');
         console.log('Window size:', window.innerWidth, 'x', window.innerHeight);
         console.log('Canvas size:', canvas.width, 'x', canvas.height);
         console.log('Screen ratio:', (window.innerWidth / window.innerHeight).toFixed(2));
@@ -2089,8 +2107,9 @@ function drawResources() {
         console.log('isPortraitMode:', isPortraitMode);
         console.log('isSmallScreen:', isSmallScreen);
         console.log('hasTouchSupport:', hasTouchSupport);
-        console.log('isMobileDevice:', isMobileDevice);
+        console.log('Final isMobileDevice:', isMobileDevice);
         console.log('fontSize:', fontSize, 'height:', resourceHeight);
+        console.log('========================');
         window.resourceDebugShown = true;
     }
     
@@ -2123,11 +2142,11 @@ function drawResources() {
         ctx.fillStyle = '#fff';
         ctx.fillText(resources.food.toString(), 150, yPosition);
         
-        // Эпоха - справа
+        // Эпоха - рядом с ресурсами (ближе к центру)
         ctx.font = `bold ${fontSize-2}px Arial`;
         ctx.fillStyle = '#FFD700';
-        ctx.textAlign = 'right';
-        ctx.fillText(`${eras[currentEra].name}`, canvas.width - 10, yPosition);
+        ctx.textAlign = 'left';
+        ctx.fillText(`${eras[currentEra].name}`, 190, yPosition);
     } else {
         // Десктопная версия - полная
         // Дерево
@@ -7513,19 +7532,19 @@ function drawMobileButtons() {
     
     // Кнопка меню
     if (buttons.menu.visible) {
-        ctx.globalAlpha = buttons.menu.pressed ? 0.8 : 0.4;
+        ctx.globalAlpha = buttons.menu.pressed ? 0.9 : 0.7; // Увеличили прозрачность
         ctx.fillStyle = '#4444ff';
         ctx.beginPath();
         ctx.arc(buttons.menu.x, buttons.menu.y, buttons.menu.radius, 0, Math.PI * 2);
         ctx.fill();
         ctx.strokeStyle = '#ffffff';
-        ctx.lineWidth = 2;
+        ctx.lineWidth = 3; // Увеличили толщину границы
         ctx.stroke();
         
         // Иконка меню (три линии)
         ctx.globalAlpha = 1;
         ctx.fillStyle = '#ffffff';
-        ctx.font = 'bold 16px Arial';
+        ctx.font = 'bold 20px Arial'; // Увеличили размер иконки
         ctx.textAlign = 'center';
         ctx.textBaseline = 'middle';
         ctx.fillText('☰', buttons.menu.x, buttons.menu.y);
