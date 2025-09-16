@@ -2067,50 +2067,79 @@ let maxPopulation = 5; // Начальный лимит населения
 
 
 function drawResources() {
+    // Проверяем мобильный режим
+    const isMobile = showMobileControls;
+    const fontSize = isMobile ? 14 : 20;
+    const resourceHeight = isMobile ? 40 : 60;
+    const yPosition = isMobile ? resourceHeight/2 : 30;
+    
     // Фон для ресурсов
     ctx.fillStyle = 'rgba(0, 0, 0, 0.7)';
-    ctx.fillRect(0, 0, canvas.width, 60);
+    ctx.fillRect(0, 0, canvas.width, resourceHeight);
     
-    // Дерево
     ctx.save();
-    ctx.font = 'bold 20px Arial';
-    ctx.fillStyle = '#8B4513';
+    ctx.font = `bold ${fontSize}px Arial`;
     ctx.textAlign = 'left';
     ctx.textBaseline = 'middle';
-    ctx.fillText('🌳', 20, 30);
-    ctx.fillStyle = '#fff';
-    ctx.fillText(`Дерево: ${resources.wood}`, 60, 30);
     
-    // Камень
-    ctx.fillStyle = '#696969';
-    ctx.fillText('🪨', 250, 30);
-    ctx.fillStyle = '#fff';
-    ctx.fillText(`Камень: ${resources.stone}`, 290, 30);
-    
-    // Пища
-    ctx.fillStyle = '#FF6B35';
-    ctx.fillText('🍎', 450, 30);
-    ctx.fillStyle = '#fff';
-    ctx.fillText(`Пища: ${resources.food}`, 490, 30);
-    
-    // Подсказки управления
-    ctx.font = '11px Arial';
-    ctx.fillStyle = '#ccc';
-    ctx.fillText('Ctrl+клик - множественное выделение | ПКМ - сброс выделения', 10, canvas.height - 10);
-    
-    // Возвращаем обычный шрифт
-    ctx.font = '18px Arial';
-    
-    // Отладочная информация - количество кустов
-    ctx.fillStyle = '#fff';
-    ctx.fillText(`Кустов: ${bushes.length}`, 650, 30);
-    
-    // Эпоха - только текстовое отображение
-    const eraX = 820;
-    ctx.font = 'bold 16px Arial';
-    ctx.fillStyle = '#FFD700';
-    ctx.textAlign = 'left';
-    ctx.fillText(`Эпоха: ${eras[currentEra].name}`, eraX, 30);
+    if (isMobile) {
+        // Мобильная версия - компактная
+        // Дерево
+        ctx.fillStyle = '#8B4513';
+        ctx.fillText('🌳', 10, yPosition);
+        ctx.fillStyle = '#fff';
+        ctx.fillText(resources.wood.toString(), 30, yPosition);
+        
+        // Камень
+        ctx.fillStyle = '#696969';
+        ctx.fillText('🪨', 70, yPosition);
+        ctx.fillStyle = '#fff';
+        ctx.fillText(resources.stone.toString(), 90, yPosition);
+        
+        // Пища
+        ctx.fillStyle = '#FF6B35';
+        ctx.fillText('🍎', 130, yPosition);
+        ctx.fillStyle = '#fff';
+        ctx.fillText(resources.food.toString(), 150, yPosition);
+        
+        // Эпоха - справа
+        const eraX = canvas.width - 120;
+        ctx.font = `bold ${fontSize-2}px Arial`;
+        ctx.fillStyle = '#FFD700';
+        ctx.textAlign = 'right';
+        ctx.fillText(`${eras[currentEra].name}`, canvas.width - 10, yPosition);
+    } else {
+        // Десктопная версия - полная
+        // Дерево
+        ctx.fillStyle = '#8B4513';
+        ctx.fillText('🌳', 20, yPosition);
+        ctx.fillStyle = '#fff';
+        ctx.fillText(`Дерево: ${resources.wood}`, 60, yPosition);
+        
+        // Камень
+        ctx.fillStyle = '#696969';
+        ctx.fillText('🪨', 250, yPosition);
+        ctx.fillStyle = '#fff';
+        ctx.fillText(`Камень: ${resources.stone}`, 290, yPosition);
+        
+        // Пища
+        ctx.fillStyle = '#FF6B35';
+        ctx.fillText('🍎', 450, yPosition);
+        ctx.fillStyle = '#fff';
+        ctx.fillText(`Пища: ${resources.food}`, 490, yPosition);
+        
+        // Подсказки управления
+        ctx.font = '11px Arial';
+        ctx.fillStyle = '#ccc';
+        ctx.fillText('Ctrl+клик - множественное выделение | ПКМ - сброс выделения', 10, canvas.height - 10);
+        
+        // Эпоха
+        const eraX = 650;
+        ctx.font = 'bold 16px Arial';
+        ctx.fillStyle = '#FFD700';
+        ctx.textAlign = 'left';
+        ctx.fillText(`Эпоха: ${eras[currentEra].name}`, eraX, yPosition);
+    }
     
     ctx.restore();
 }
@@ -7311,9 +7340,6 @@ function drawMainMenu() {
     
     ctx.fillStyle = '#27ae60';
     ctx.fillRect(newGameButtonX, newGameButtonY, buttonWidth, buttonHeight);
-    ctx.strokeStyle = '#2ecc71';
-    ctx.lineWidth = 3;
-    ctx.strokeRect(newGameButtonX, newGameButtonY, buttonWidth, buttonHeight);
     
     ctx.font = 'bold 20px Arial';
     ctx.fillStyle = '#fff';
@@ -7326,9 +7352,6 @@ function drawMainMenu() {
     
     ctx.fillStyle = hasSave ? '#3498db' : '#7f8c8d';
     ctx.fillRect(continueButtonX, continueButtonY, buttonWidth, buttonHeight);
-    ctx.strokeStyle = hasSave ? '#5dade2' : '#95a5a6';
-    ctx.lineWidth = 3;
-    ctx.strokeRect(continueButtonX, continueButtonY, buttonWidth, buttonHeight);
     
     ctx.font = 'bold 20px Arial';
     ctx.fillStyle = hasSave ? '#fff' : '#95a5a6';
@@ -7342,9 +7365,6 @@ function drawMainMenu() {
     
     ctx.fillStyle = showMobileControls ? '#e67e22' : '#9b59b6';
     ctx.fillRect(controlButtonX, controlButtonY, controlButtonWidth, controlButtonHeight);
-    ctx.strokeStyle = showMobileControls ? '#f39c12' : '#8e44ad';
-    ctx.lineWidth = 2;
-    ctx.strokeRect(controlButtonX, controlButtonY, controlButtonWidth, controlButtonHeight);
     
     ctx.font = 'bold 16px Arial';
     ctx.fillStyle = '#fff';
