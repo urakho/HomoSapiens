@@ -5495,11 +5495,16 @@ function drawFlyingSpears() {
 
 // Функция для обработки кликов в главном меню
 function handleMenuClick(screenX, screenY) {
+    console.log('Menu click at:', screenX, screenY);
+    
     if (window.menuButtons) {
+        console.log('menuButtons found');
+        
         // Клик на "Новая игра"
         const newGameBtn = window.menuButtons.newGame;
         if (screenX >= newGameBtn.x && screenX <= newGameBtn.x + newGameBtn.width &&
             screenY >= newGameBtn.y && screenY <= newGameBtn.y + newGameBtn.height) {
+            console.log('New game button clicked!');
             startNewGame();
             return true;
         }
@@ -5509,6 +5514,7 @@ function handleMenuClick(screenX, screenY) {
         if (screenX >= continueBtn.x && screenX <= continueBtn.x + continueBtn.width &&
             screenY >= continueBtn.y && screenY <= continueBtn.y + continueBtn.height &&
             hasSavedGame()) { // Проверяем, есть ли сохранение
+            console.log('Continue button clicked!');
             continueGame();
             return true;
         }
@@ -5517,9 +5523,14 @@ function handleMenuClick(screenX, screenY) {
         const controlBtn = window.menuButtons.controlMode;
         if (screenX >= controlBtn.x && screenX <= controlBtn.x + controlBtn.width &&
             screenY >= controlBtn.y && screenY <= controlBtn.y + controlBtn.height) {
+            console.log('Control mode button clicked!');
             toggleMobileControls();
             return true;
         }
+        
+        console.log('Click missed all buttons');
+    } else {
+        console.log('window.menuButtons not found!');
     }
     return false;
 }
@@ -5574,8 +5585,12 @@ canvas.addEventListener('mousedown', function(e) {
     const mx = screenX + camera.x;
     const my = screenY + camera.y;
     
+    console.log('Mouse down at screen:', screenX, screenY, 'world:', mx, my);
+    console.log('Game state:', gameState);
+    
     // Обработка кликов в главном меню
     if (gameState === 'menu') {
+        console.log('Processing menu click...');
         if (handleMenuClick(screenX, screenY)) {
             return;
         }
