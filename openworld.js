@@ -10,7 +10,7 @@ const ctx = canvas.getContext('2d');
 
 // Загружаем изображение пещеры
 const caveImage = new Image();
-caveImage.src = '.png/Cave.png';
+caveImage.src = 'png/Cave.png';
 let caveImageLoaded = false;
 
 caveImage.onload = function() {
@@ -18,14 +18,16 @@ caveImage.onload = function() {
     console.log('Cave image loaded successfully');
 };
 
-caveImage.onerror = function() {
-    console.error('Failed to load .png/Cave.png');
+caveImage.onerror = function(e) {
+    console.error('Failed to load png/Cave.png', e);
+    console.error('Current URL:', window.location.href);
+    console.error('Full image path would be:', window.location.origin + window.location.pathname.replace('index.html', '') + 'png/Cave.png');
     caveImageLoaded = false;
 };
 
 // Загружаем изображения мамонтов
 const mammothImage = new Image();
-mammothImage.src = '.png/Mammoth.png';
+mammothImage.src = 'png/Mammoth.png';
 let mammothImageLoaded = false;
 
 mammothImage.onload = function() {
@@ -33,13 +35,14 @@ mammothImage.onload = function() {
     console.log('Mammoth image loaded successfully');
 };
 
-mammothImage.onerror = function() {
-    console.error('Failed to load .png/Mammoth.png');
+mammothImage.onerror = function(e) {
+    console.error('Failed to load png/Mammoth.png', e);
+    console.error('Image source:', mammothImage.src);
     mammothImageLoaded = false;
 };
 
 const angryMammothImage = new Image();
-angryMammothImage.src = '.png/Angry Mammoth.png';
+angryMammothImage.src = 'png/Angry Mammoth.png';
 let angryMammothImageLoaded = false;
 
 angryMammothImage.onload = function() {
@@ -47,14 +50,15 @@ angryMammothImage.onload = function() {
     console.log('Angry Mammoth image loaded successfully');
 };
 
-angryMammothImage.onerror = function() {
-    console.error('Failed to load .png/Angry Mammoth.png');
+angryMammothImage.onerror = function(e) {
+    console.error('Failed to load png/Angry Mammoth.png', e);
+    console.error('Image source:', angryMammothImage.src);
     angryMammothImageLoaded = false;
 };
 
 // Загружаем изображения степного мамонта
 const steppeMammothImage = new Image();
-steppeMammothImage.src = '.png/Imperial Mammoth.png';
+steppeMammothImage.src = 'png/Imperial Mammoth.png';
 let steppeMammothImageLoaded = false;
 
 steppeMammothImage.onload = function() {
@@ -62,13 +66,14 @@ steppeMammothImage.onload = function() {
     console.log('Imperial Mammoth image loaded successfully');
 };
 
-steppeMammothImage.onerror = function() {
-    console.error('Failed to load .png/Imperial Mammoth.png');
+steppeMammothImage.onerror = function(e) {
+    console.error('Failed to load png/Imperial Mammoth.png', e);
+    console.error('Image source:', steppeMammothImage.src);
     steppeMammothImageLoaded = false;
 };
 
 const angrySteppeMammothImage = new Image();
-angrySteppeMammothImage.src = '.png/Angry Imperial Mammoth.png';
+angrySteppeMammothImage.src = 'png/Angry Imperial Mammoth.png';
 let angrySteppeMammothImageLoaded = false;
 
 angrySteppeMammothImage.onload = function() {
@@ -77,13 +82,13 @@ angrySteppeMammothImage.onload = function() {
 };
 
 angrySteppeMammothImage.onerror = function() {
-    console.error('Failed to load .png/Angry Imperial Mammoth.png');
+    console.error('Failed to load png/Angry Imperial Mammoth.png');
     angrySteppeMammothImageLoaded = false;
 };
 
 // Загружаем изображение туши степного мамонта
 const steppeMammothBodyImage = new Image();
-steppeMammothBodyImage.src = '.png/Imperial Mammoth Body.png';
+steppeMammothBodyImage.src = 'png/Imperial Mammoth Body.png';
 let steppeMammothBodyImageLoaded = false;
 
 steppeMammothBodyImage.onload = function() {
@@ -92,13 +97,13 @@ steppeMammothBodyImage.onload = function() {
 };
 
 steppeMammothBodyImage.onerror = function() {
-    console.error('Failed to load .png/Imperial Mammoth Body.png');
+    console.error('Failed to load png/Imperial Mammoth Body.png');
     steppeMammothBodyImageLoaded = false;
 };
 
 // Загружаем изображение туши мамонта
 const mammothBodyImage = new Image();
-mammothBodyImage.src = '.png/Mammoth Body.png';
+mammothBodyImage.src = 'png/Mammoth Body.png';
 let mammothBodyImageLoaded = false;
 
 mammothBodyImage.onload = function() {
@@ -107,42 +112,15 @@ mammothBodyImage.onload = function() {
 };
 
 mammothBodyImage.onerror = function() {
-    console.error('Failed to load .png/Mammoth Body.png');
+    console.error('Failed to load png/Mammoth Body.png');
     mammothBodyImageLoaded = false;
 };
 
-// Загружаем изображения эпох
-const stoneAgeImage = new Image();
-stoneAgeImage.src = '.png/Stone Age.png';
-let stoneAgeImageLoaded = false;
-
-stoneAgeImage.onload = function() {
-    stoneAgeImageLoaded = true;
-    console.log('Stone Age image loaded successfully');
-};
-
-stoneAgeImage.onerror = function() {
-    console.error('Failed to load .png/Stone Age.png');
-    stoneAgeImageLoaded = false;
-};
-
-const boneAgeImage = new Image();
-boneAgeImage.src = '.png/Bone Age.png';
-let boneAgeImageLoaded = false;
-
-boneAgeImage.onload = function() {
-    boneAgeImageLoaded = true;
-    console.log('Bone Age image loaded successfully');
-};
-
-boneAgeImage.onerror = function() {
-    console.error('Failed to load .png/Bone Age.png');
-    boneAgeImageLoaded = false;
-};
+// Изображения эпох больше не используются
 
 // Загружаем изображение костра
 const campfireImage = new Image();
-campfireImage.src = '.png/Campfire.png';
+campfireImage.src = 'png/Campfire.png';
 let campfireImageLoaded = false;
 
 campfireImage.onload = function() {
@@ -150,8 +128,9 @@ campfireImage.onload = function() {
     console.log('Campfire image loaded successfully');
 };
 
-campfireImage.onerror = function() {
-    console.error('Failed to load .png/Campfire.png');
+campfireImage.onerror = function(e) {
+    console.error('Failed to load png/Campfire.png', e);
+    console.error('Image source:', campfireImage.src);
     campfireImageLoaded = false;
 };
 
@@ -165,8 +144,10 @@ mainMenuImage.onload = function() {
     console.log('Main menu image loaded successfully');
 };
 
-mainMenuImage.onerror = function() {
-    console.error('Failed to load main.png/Main menu.png');
+mainMenuImage.onerror = function(e) {
+    console.error('Failed to load main.png/Main menu.png', e);
+    console.error('Current URL:', window.location.href);
+    console.error('Full image path would be:', window.location.origin + window.location.pathname.replace('index.html', '') + 'main.png/Main menu.png');
     mainMenuImageLoaded = false;
 };
 
@@ -175,6 +156,123 @@ function resizeCanvas() {
     canvas.width = window.innerWidth;
     canvas.height = window.innerHeight;
 }
+
+// Функция для проверки статуса загрузки всех изображений
+function checkImageLoadingStatus() {
+    const imageStatus = {
+        'Cave Image': caveImageLoaded,
+        'Mammoth Image': mammothImageLoaded,
+        'Angry Mammoth Image': angryMammothImageLoaded,
+        'Imperial Mammoth Image': steppeMammothImageLoaded,
+        'Angry Imperial Mammoth Image': angrySteppeMammothImageLoaded,
+        'Imperial Mammoth Body Image': steppeMammothBodyImageLoaded,
+        'Mammoth Body Image': mammothBodyImageLoaded,
+        'Campfire Image': campfireImageLoaded,
+        'Main Menu Image': mainMenuImageLoaded
+    };
+    
+    console.log('=== IMAGE LOADING STATUS ===');
+    for (const [name, loaded] of Object.entries(imageStatus)) {
+        console.log(`${name}: ${loaded ? '✓ Loaded' : '✗ Failed'}`);
+    }
+    console.log('============================');
+    
+    return imageStatus;
+}
+
+// Проверяем статус загрузки через 2 секунды после загрузки страницы
+setTimeout(checkImageLoadingStatus, 2000);
+
+// Функция предварительной загрузки изображений
+function preloadImages() {
+    const images = [
+        { img: caveImage, name: 'Cave' },
+        { img: mammothImage, name: 'Mammoth' },
+        { img: angryMammothImage, name: 'Angry Mammoth' },
+        { img: steppeMammothImage, name: 'Imperial Mammoth' },
+        { img: angrySteppeMammothImage, name: 'Angry Imperial Mammoth' },
+        { img: steppeMammothBodyImage, name: 'Imperial Mammoth Body' },
+        { img: mammothBodyImage, name: 'Mammoth Body' },
+        { img: campfireImage, name: 'Campfire' },
+        { img: mainMenuImage, name: 'Main Menu' }
+    ];
+    
+    let loadedCount = 0;
+    const totalImages = images.length;
+    
+    return new Promise((resolve) => {
+        images.forEach(({ img, name }) => {
+            if (img.complete && img.naturalWidth > 0) {
+                loadedCount++;
+                if (loadedCount === totalImages) {
+                    resolve();
+                }
+            } else {
+                const originalOnload = img.onload;
+                img.onload = function() {
+                    if (originalOnload) originalOnload.call(this);
+                    loadedCount++;
+                    console.log(`Loaded ${name} (${loadedCount}/${totalImages})`);
+                    if (loadedCount === totalImages) {
+                        resolve();
+                    }
+                };
+                
+                const originalOnerror = img.onerror;
+                img.onerror = function(e) {
+                    if (originalOnerror) originalOnerror.call(this, e);
+                    loadedCount++;
+                    console.log(`Failed to load ${name} (${loadedCount}/${totalImages})`);
+                    if (loadedCount === totalImages) {
+                        resolve();
+                    }
+                };
+            }
+        });
+        
+        // Если все изображения уже загружены
+        if (loadedCount === totalImages) {
+            resolve();
+        }
+    });
+}
+
+// Инициализация после загрузки изображений
+preloadImages().then(() => {
+    console.log('All images processed (loaded or failed)');
+    checkImageLoadingStatus();
+});
+
+// Функция для проверки доступности файлов изображений
+async function checkImageAvailability() {
+    const imagePaths = [
+        'png/Cave.png',
+        'png/Mammoth.png',
+        'png/Angry Mammoth.png',
+        'png/Imperial Mammoth.png',
+        'png/Angry Imperial Mammoth.png',
+        'png/Imperial Mammoth Body.png',
+        'png/Mammoth Body.png',
+        'png/Campfire.png',
+        'main.png/Main menu.png'
+    ];
+    
+    console.log('=== CHECKING IMAGE FILE AVAILABILITY ===');
+    
+    for (const path of imagePaths) {
+        try {
+            const response = await fetch(path, { method: 'HEAD' });
+            console.log(`${path}: ${response.ok ? '✓ Available' : '✗ Not found'} (${response.status})`);
+        } catch (error) {
+            console.log(`${path}: ✗ Error - ${error.message}`);
+        }
+    }
+    
+    console.log('==========================================');
+}
+
+// Проверяем доступность файлов через 1 секунду
+setTimeout(checkImageAvailability, 1000);
 
 // Устанавливаем размер при загрузке и при изменении размера окна
 resizeCanvas();
@@ -1851,26 +1949,12 @@ function drawResources() {
     ctx.fillStyle = '#fff';
     ctx.fillText(`Кустов: ${bushes.length}`, 650, 30);
     
-    // Эпоха - изображение и название
+    // Эпоха - только текстовое отображение
     const eraX = 820;
-    const currentEraImage = currentEra === 'stone_age' ? stoneAgeImage : boneAgeImage;
-    const currentEraImageLoaded = currentEra === 'stone_age' ? stoneAgeImageLoaded : boneAgeImageLoaded;
-    
-    if (currentEraImageLoaded) {
-        // Рисуем изображение эпохи размером 60x60 (в 1.5 раза больше)
-        ctx.drawImage(currentEraImage, eraX, 2, 60, 60);
-        // Название эпохи под изображением
-        ctx.font = 'bold 14px Arial';
-        ctx.fillStyle = '#FFD700'; // Золотой цвет для названия эпохи
-        ctx.textAlign = 'center';
-        ctx.fillText(eras[currentEra].name, eraX + 30, 75);
-    } else {
-        // Если изображение не загружено, показываем только текст
-        ctx.font = 'bold 16px Arial';
-        ctx.fillStyle = '#FFD700';
-        ctx.textAlign = 'left';
-        ctx.fillText(`Эпоха: ${eras[currentEra].name}`, eraX, 30);
-    }
+    ctx.font = 'bold 16px Arial';
+    ctx.fillStyle = '#FFD700';
+    ctx.textAlign = 'left';
+    ctx.fillText(`Эпоха: ${eras[currentEra].name}`, eraX, 30);
     
     ctx.restore();
 }
@@ -4022,32 +4106,16 @@ function drawEraInfo() {
     ctx.lineWidth = 2;
     ctx.strokeRect(canvas.width - 300, 10, 290, 120);
     
-    // Определяем изображение эпохи
-    const currentEraImage = currentEra === 'stone_age' ? stoneAgeImage : boneAgeImage;
-    const currentEraImageLoaded = currentEra === 'stone_age' ? stoneAgeImageLoaded : boneAgeImageLoaded;
+    // Отображение эпохи - только текст
+    ctx.fillStyle = '#fff';
+    ctx.font = 'bold 16px Arial';
+    ctx.textAlign = 'left';
+    ctx.fillText(`Эпоха: ${eras[currentEra].name}`, canvas.width - 290, 35);
     
-    // Рисуем изображение эпохи
-    if (currentEraImageLoaded) {
-        const imageSize = 50;
-        ctx.drawImage(currentEraImage, canvas.width - 290, 20, imageSize, imageSize);
-        
-        // Название эпохи рядом с изображением
-        ctx.fillStyle = '#fff';
-        ctx.font = 'bold 16px Arial';
-        ctx.textAlign = 'left';
-        ctx.fillText(`${eras[currentEra].name}`, canvas.width - 230, 35);
-        
-        // Описание эпохи
-        ctx.font = '11px Arial';
-        ctx.fillStyle = '#bdc3c7';
-        ctx.fillText(eras[currentEra].description, canvas.width - 230, 55);
-    } else {
-        // Фолбэк без изображения
-        ctx.fillStyle = '#fff';
-        ctx.font = 'bold 16px Arial';
-        ctx.textAlign = 'left';
-        ctx.fillText(`Эпоха: ${eras[currentEra].name}`, canvas.width - 290, 35);
-    }
+    // Описание эпохи
+    ctx.font = '11px Arial';
+    ctx.fillStyle = '#bdc3c7';
+    ctx.fillText(eras[currentEra].description, canvas.width - 290, 55);
     
     // Прогресс к следующей эпохе
     ctx.font = '12px Arial';
@@ -4110,16 +4178,13 @@ function drawEraNotifications() {
         ctx.lineWidth = 3;
         ctx.strokeRect(centerX - 200, centerY - 60, 400, 120);
         
-        // Изображение эпохи
+        // Иконка эпохи (текстовая)
         if (notification.eraKey) {
-            const eraImage = notification.eraKey === 'stone_age' ? stoneAgeImage : boneAgeImage;
-            const imageLoaded = notification.eraKey === 'stone_age' ? stoneAgeImageLoaded : boneAgeImageLoaded;
-            
-            if (imageLoaded) {
-                ctx.globalAlpha = alpha;
-                ctx.drawImage(eraImage, centerX - 190, centerY - 50, 60, 60);
-                ctx.globalAlpha = 1;
-            }
+            ctx.font = 'bold 24px Arial';
+            ctx.fillStyle = `rgba(255, 215, 0, ${alpha})`;
+            ctx.textAlign = 'center';
+            const eraIcon = notification.eraKey === 'stone_age' ? '🗿' : '🦴';
+            ctx.fillText(eraIcon, centerX - 160, centerY - 20);
         }
         
         // Заголовок
