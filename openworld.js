@@ -2067,11 +2067,32 @@ let maxPopulation = 5; // Начальный лимит населения
 
 
 function drawResources() {
-    // Проверяем мобильный режим
-    const isMobile = showMobileControls;
-    const fontSize = isMobile ? 14 : 20;
-    const resourceHeight = isMobile ? 40 : 60;
-    const yPosition = isMobile ? resourceHeight/2 : 30;
+    // Проверяем мобильный режим более надежно
+    // Используем комбинацию факторов: флаг showMobileControls, размер экрана, соотношение сторон и touch support
+    const screenRatio = window.innerWidth / window.innerHeight;
+    const isPortraitMode = screenRatio < 1.2; // Портретная ориентация или почти квадратный экран
+    const isSmallScreen = window.innerWidth <= 1024 || canvas.width <= 1024;
+    const hasTouchSupport = 'ontouchstart' in window || navigator.maxTouchPoints > 0;
+    const isMobileDevice = showMobileControls || isSmallScreen || (isPortraitMode && window.innerWidth <= 1200) || (hasTouchSupport && window.innerWidth <= 1366);
+    
+    const fontSize = isMobileDevice ? 14 : 20;
+    const resourceHeight = isMobileDevice ? 40 : 60;
+    const yPosition = isMobileDevice ? resourceHeight/2 : 30;
+    
+    // Отладка (только в первый раз)
+    if (!window.resourceDebugShown) {
+        console.log('Resource bar debug:');
+        console.log('Window size:', window.innerWidth, 'x', window.innerHeight);
+        console.log('Canvas size:', canvas.width, 'x', canvas.height);
+        console.log('Screen ratio:', (window.innerWidth / window.innerHeight).toFixed(2));
+        console.log('showMobileControls:', showMobileControls);
+        console.log('isPortraitMode:', isPortraitMode);
+        console.log('isSmallScreen:', isSmallScreen);
+        console.log('hasTouchSupport:', hasTouchSupport);
+        console.log('isMobileDevice:', isMobileDevice);
+        console.log('fontSize:', fontSize, 'height:', resourceHeight);
+        window.resourceDebugShown = true;
+    }
     
     // Фон для ресурсов
     ctx.fillStyle = 'rgba(0, 0, 0, 0.7)';
@@ -2082,7 +2103,7 @@ function drawResources() {
     ctx.textAlign = 'left';
     ctx.textBaseline = 'middle';
     
-    if (isMobile) {
+    if (isMobileDevice) {
         // Мобильная версия - компактная
         // Дерево
         ctx.fillStyle = '#8B4513';
@@ -2103,7 +2124,6 @@ function drawResources() {
         ctx.fillText(resources.food.toString(), 150, yPosition);
         
         // Эпоха - справа
-        const eraX = canvas.width - 120;
         ctx.font = `bold ${fontSize-2}px Arial`;
         ctx.fillStyle = '#FFD700';
         ctx.textAlign = 'right';
