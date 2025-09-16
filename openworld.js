@@ -8,6 +8,96 @@ const autoSaveInterval = 30000; // Автосохранение каждые 30 
 const canvas = document.getElementById('gameCanvas');
 const ctx = canvas.getContext('2d');
 
+// Мобильное управление
+// Улучшенное определение мобильных устройств
+const isMobile = (() => {
+    // Проверяем User Agent
+    const userAgent = navigator.userAgent.toLowerCase();
+    const mobileDevices = /android|webos|iphone|ipad|ipod|blackberry|iemobile|opera mini|mobile|tablet/i;
+    
+    // Проверяем размер экрана (для планшетов и маленьких ноутбуков)
+    const isSmallScreen = window.innerWidth <= 1024 && window.innerHeight <= 768;
+    
+    // Проверяем поддержку touch событий
+    const hasTouchScreen = 'ontouchstart' in window || navigator.maxTouchPoints > 0;
+    
+    // Определяем мобильное устройство
+    const isMobileDevice = mobileDevices.test(userAgent);
+    
+    // Если это мобильное устройство ИЛИ (маленький экран И поддержка касаний)
+    return isMobileDevice || (isSmallScreen && hasTouchScreen);
+})();
+let mobileControls = {
+    // Виртуальный джойстик
+    joystick: {
+        active: false,
+        centerX: 0,
+        centerY: 0,
+        currentX: 0,
+        currentY: 0,
+        radius: 50,
+        maxDistance: 40,
+        visible: false
+    },
+    // Кнопки действий
+    buttons: {
+        attack: { x: 0, y: 0, radius: 35, pressed: false, visible: false },
+        interact: { x: 0, y: 0, radius: 35, pressed: false, visible: false },
+        menu: { x: 0, y: 0, radius: 30, pressed: false, visible: false }
+    },
+    // Активные касания
+    touches: new Map()
+};
+
+// Показывать ли мобильные элементы управления
+// При первом запуске автоматически определяем устройство
+let showMobileControls = (() => {
+    const savedValue = localStorage.getItem('mobileControls');
+    if (savedValue !== null) {
+        // Если есть сохраненное значение, используем его
+        return savedValue === 'true';
+    } else {
+        // При первом запуске определяем автоматически
+        const autoDetected = isMobile;
+        localStorage.setItem('mobileControls', autoDetected.toString());
+        return autoDetected;
+    }
+})();
+
+// Отладочная информация об автоопределении устройства
+console.log('=== DEVICE DETECTION ===');
+console.log('User Agent:', navigator.userAgent);
+console.log('Screen size:', window.innerWidth + 'x' + window.innerHeight);
+console.log('Touch support:', 'ontouchstart' in window);
+console.log('Max touch points:', navigator.maxTouchPoints);
+console.log('Detected as mobile:', isMobile);
+console.log('Mobile controls enabled:', showMobileControls);
+console.log('========================');
+
+// Функция для переключения мобильного управления
+function toggleMobileControls() {
+    showMobileControls = !showMobileControls;
+    localStorage.setItem('mobileControls', showMobileControls.toString());
+    if (showMobileControls) {
+        updateMobileControlsPosition();
+    }
+    console.log('Мобильное управление:', showMobileControls ? 'включено' : 'выключено');
+}
+
+// Функция для сброса настроек и повторного автоопределения
+function resetToAutoDetection() {
+    localStorage.removeItem('mobileControls');
+    showMobileControls = isMobile;
+    localStorage.setItem('mobileControls', showMobileControls.toString());
+    if (showMobileControls) {
+        updateMobileControlsPosition();
+    }
+    console.log('Настройки сброшены. Автоопределение:', showMobileControls ? 'MOBILE' : 'LAPTOP');
+}
+
+// Делаем функцию доступной глобально для отладки
+window.resetToAutoDetection = resetToAutoDetection;
+
 // Загружаем изображение пещеры
 const caveImage = new Image();
 caveImage.src = 'png/Cave.png';
@@ -155,6 +245,36 @@ mainMenuImage.onerror = function(e) {
 function resizeCanvas() {
     canvas.width = window.innerWidth;
     canvas.height = window.innerHeight;
+    
+    // Обновляем позиции мобильных элементов управления
+    if (showMobileControls) {
+        updateMobileControlsPosition();
+    }
+}
+
+// Функция для обновления позиций мобильных элементов управления
+function updateMobileControlsPosition() {
+    const isLandscape = canvas.width > canvas.height;
+    const isSmallScreen = Math.min(canvas.width, canvas.height) < 600;
+    
+    // Адаптивные размеры
+    const baseMargin = isSmallScreen ? 15 : 20;
+    
+    // Адаптивные размеры кнопок
+    const menuButtonRadius = isSmallScreen ? 25 : 30;
+    
+    // Обновляем размеры в объекте управления (убираем джойстик и лишние кнопки)
+    mobileControls.buttons.menu.radius = menuButtonRadius;
+    
+    // Скрываем джойстик и кнопки атаки/взаимодействия
+    mobileControls.joystick.visible = false;
+    mobileControls.buttons.attack.visible = false;
+    mobileControls.buttons.interact.visible = false;
+    
+    // Кнопка меню в правом верхнем углу
+    mobileControls.buttons.menu.x = canvas.width - menuButtonRadius - baseMargin;
+    mobileControls.buttons.menu.y = menuButtonRadius + baseMargin;
+    mobileControls.buttons.menu.visible = true;
 }
 
 // Функция для проверки статуса загрузки всех изображений
@@ -241,7 +361,43 @@ function preloadImages() {
 preloadImages().then(() => {
     console.log('All images processed (loaded or failed)');
     checkImageLoadingStatus();
+    startGame();
 });
+
+// Запуск игры с таймаутом (на случай проблем с изображениями)
+setTimeout(() => {
+    console.log('Force starting game after timeout');
+    startGame();
+}, 5000); // Принудительный запуск через 5 секунд
+
+// Функция запуска игры
+let gameStarted = false;
+function startGame() {
+    if (gameStarted) return; // Избегаем двойного запуска
+    gameStarted = true;
+    
+    console.log('=== STARTING GAME ===');
+    console.log('Canvas element:', canvas);
+    console.log('Canvas context:', ctx);
+    console.log('Canvas size:', canvas.width, 'x', canvas.height);
+    console.log('Game state:', gameState);
+    console.log('Mobile controls:', showMobileControls);
+    
+    try {
+        resizeCanvas();
+        console.log('Canvas resized successfully');
+        
+        // Если мобильные контролы включены, настраиваем их
+        if (showMobileControls) {
+            updateMobileControlsPosition();
+            console.log('Mobile controls positioned');
+        }
+        
+        console.log('Game started successfully');
+    } catch (error) {
+        console.error('Error starting game:', error);
+    }
+}
 
 // Функция для проверки доступности файлов изображений
 async function checkImageAvailability() {
@@ -2590,10 +2746,11 @@ function drawBonfirePanel() {
 }
 
 function drawPopulation() {
-    // Компактная панель населения справа
-    const panelWidth = 160;
-    const itemHeight = 35; // Уменьшенная высота элемента
-    const panelHeight = people.length * itemHeight + 60; // Увеличили для двух заголовков
+    // Адаптивная панель населения справа
+    const isMobile = showMobileControls;
+    const panelWidth = isMobile ? 120 : 160; // Уменьшаем ширину для мобильных
+    const itemHeight = isMobile ? 28 : 35; // Уменьшаем высоту элемента для мобильных
+    const panelHeight = people.length * itemHeight + (isMobile ? 50 : 60); // Меньший отступ для мобильных
     const panelX = canvas.width - panelWidth - 10;
     const panelY = 80;
     
@@ -2603,24 +2760,24 @@ function drawPopulation() {
     
     // Заголовок с счетчиком населения
     ctx.save();
-    ctx.font = 'bold 16px Arial';
+    ctx.font = isMobile ? 'bold 12px Arial' : 'bold 16px Arial'; // Меньший шрифт для мобильных
     ctx.fillStyle = '#fff';
     ctx.textAlign = 'center';
-    ctx.fillText(`Население: ${people.length}/${maxPopulation}`, panelX + panelWidth / 2, panelY + 20);
+    ctx.fillText(`Население: ${people.length}/${maxPopulation}`, panelX + panelWidth / 2, panelY + (isMobile ? 15 : 20));
     
     // Показываем количество выделенных персонажей
     if (selectedPeople.length > 0) {
-        ctx.font = 'bold 12px Arial';
+        ctx.font = isMobile ? 'bold 10px Arial' : 'bold 12px Arial'; // Меньший шрифт для мобильных
         ctx.fillStyle = '#3498db';
-        ctx.fillText(`Выделено: ${selectedPeople.length}`, panelX + panelWidth / 2, panelY + 35);
+        ctx.fillText(`Выделено: ${selectedPeople.length}`, panelX + panelWidth / 2, panelY + (isMobile ? 28 : 35));
     }
     
     // Список людей
-    ctx.font = '12px Arial';
+    ctx.font = isMobile ? '10px Arial' : '12px Arial'; // Меньший шрифт для мобильных
     ctx.textAlign = 'left';
     
     people.forEach((person, idx) => {
-        const itemY = panelY + 50 + idx * itemHeight; // Увеличили отступ для строки "Выделено"
+        const itemY = panelY + (isMobile ? 40 : 50) + idx * itemHeight; // Меньший отступ для мобильных
         
         // Фон для персонажа (подсвечиваем выделенных)
         if (selectedPeople.includes(idx)) {
@@ -2629,8 +2786,9 @@ function drawPopulation() {
         }
         
         // Маленькая иконка персонажа
+        const iconRadius = isMobile ? 6 : 8; // Меньший радиус для мобильных
         ctx.beginPath();
-        ctx.arc(panelX + 20, itemY + itemHeight/2, 8, 0, Math.PI * 2);
+        ctx.arc(panelX + (isMobile ? 15 : 20), itemY + itemHeight/2, iconRadius, 0, Math.PI * 2);
         
         // Разные цвета для разных типов
         if (person.type === 'warrior') {
@@ -2654,42 +2812,42 @@ function drawPopulation() {
         ctx.fillStyle = '#fff';
         let personTitle;
         if (person.type === 'warrior') {
-            personTitle = `Воин ${idx + 1}`;
+            personTitle = isMobile ? `В${idx + 1}` : `Воин ${idx + 1}`; // Короткие названия для мобильных
         } else if (person.type === 'hunter') {
-            personTitle = `Охотник ${idx + 1}`;
+            personTitle = isMobile ? `О${idx + 1}` : `Охотник ${idx + 1}`;
         } else if (person.type === 'torchbearer') {
-            personTitle = `Факельщик ${idx + 1}`;
+            personTitle = isMobile ? `Ф${idx + 1}` : `Факельщик ${idx + 1}`;
         } else if (person.type === 'spearman') {
-            personTitle = `Копейщик ${idx + 1}`;
+            personTitle = isMobile ? `К${idx + 1}` : `Копейщик ${idx + 1}`;
         } else {
-            personTitle = `Человек ${idx + 1}`;
+            personTitle = isMobile ? `Ч${idx + 1}` : `Человек ${idx + 1}`;
         }
-        ctx.fillText(personTitle, panelX + 35, itemY + 12);
+        ctx.fillText(personTitle, panelX + (isMobile ? 25 : 35), itemY + (isMobile ? 10 : 12));
         
-        // Статус одной строкой
-        let status = 'Ожидает';
+        // Статус одной строкой (для мобильных - короче)
+        let status = isMobile ? 'Ожидает' : 'Ожидает';
         if (person.butchering) {
-            status = 'Разделывает тушу';
+            status = isMobile ? 'Разделка' : 'Разделывает тушу';
         } else if (person.target) {
             status = 'Идет';
         } else if (person.hasAxe) {
             status = 'Рубит';
         } else if (person.harvestingTreePos && person.harvestTimer > 0) {
-            status = 'Собирает еду';
+            status = isMobile ? 'Еда' : 'Собирает еду';
         } else if (person.collectingStonePos && person.collectTimer > 0) {
-            status = 'Собирает камни';
+            status = isMobile ? 'Камни' : 'Собирает камни';
         } else if (person.statusDisplayTimer > 0) {
             // Показываем статус на основе последнего действия
             if (person.lastAction === 'stone') {
-                status = 'Собирает камни';
+                status = isMobile ? 'Камни' : 'Собирает камни';
             } else if (person.lastAction === 'food') {
-                status = 'Собирает еду';
+                status = isMobile ? 'Еда' : 'Собирает еду';
             } else if (person.lastAction === 'Разделывает тушу') {
-                status = 'Разделывает тушу';
+                status = isMobile ? 'Разделка' : 'Разделывает тушу';
             }
         }
         ctx.fillStyle = '#ccc';
-        ctx.fillText(status, panelX + 35, itemY + 25);
+        ctx.fillText(status, panelX + (isMobile ? 25 : 35), itemY + (isMobile ? 20 : 25));
         
         // Сохраняем координаты для кликов
         person.uiX = panelX + 5;
@@ -2702,17 +2860,17 @@ function drawPopulation() {
     if (populationMessages.length > 0) {
         const messagesY = panelY + panelHeight + 10;
         populationMessages.forEach((message, idx) => {
-            const messageY = messagesY + idx * 25;
+            const messageY = messagesY + idx * (isMobile ? 20 : 25); // Меньше места для мобильных
             
             // Фон сообщения
             ctx.fillStyle = 'rgba(46, 204, 113, 0.8)';
-            ctx.fillRect(panelX, messageY, panelWidth, 22);
+            ctx.fillRect(panelX, messageY, panelWidth, isMobile ? 18 : 22);
             
             // Текст сообщения
-            ctx.font = '11px Arial';
+            ctx.font = isMobile ? '9px Arial' : '11px Arial'; // Меньший шрифт для мобильных
             ctx.fillStyle = '#fff';
             ctx.textAlign = 'center';
-            ctx.fillText(message.text, panelX + panelWidth / 2, messageY + 15);
+            ctx.fillText(message.text, panelX + panelWidth / 2, messageY + (isMobile ? 12 : 15));
         });
     }
     
@@ -4000,6 +4158,10 @@ function drawSurface() {
     drawReproductionHousePanel(); // Рисуем панель хижины рода
     drawWarriorCampPanel(); // Рисуем панель лагеря воинов
     drawBonfirePanel(); // Рисуем панель костра
+    drawEraNotifications(); // Уведомления об эпохах
+    
+    // Мобильные элементы управления поверх всего
+    drawMobileControls();
 
     // Показать прочность куста во время рубки
     bushes.forEach(bush => {
@@ -4067,6 +4229,9 @@ function drawCaveWorld() {
     drawWarriorCampPanel();
     drawBonfirePanel();
     drawEraNotifications(); // Уведомления об эпохах
+    
+    // Мобильные элементы управления поверх всего
+    drawMobileControls();
 }
 
 // Система эпох
@@ -5328,6 +5493,69 @@ function drawFlyingSpears() {
 }
 
 
+// Функция для обработки кликов в главном меню
+function handleMenuClick(screenX, screenY) {
+    if (window.menuButtons) {
+        // Клик на "Новая игра"
+        const newGameBtn = window.menuButtons.newGame;
+        if (screenX >= newGameBtn.x && screenX <= newGameBtn.x + newGameBtn.width &&
+            screenY >= newGameBtn.y && screenY <= newGameBtn.y + newGameBtn.height) {
+            startNewGame();
+            return true;
+        }
+        
+        // Клик на "Продолжить"
+        const continueBtn = window.menuButtons.continue;
+        if (screenX >= continueBtn.x && screenX <= continueBtn.x + continueBtn.width &&
+            screenY >= continueBtn.y && screenY <= continueBtn.y + continueBtn.height &&
+            hasSavedGame()) { // Проверяем, есть ли сохранение
+            continueGame();
+            return true;
+        }
+        
+        // Клик на кнопку переключения управления
+        const controlBtn = window.menuButtons.controlMode;
+        if (screenX >= controlBtn.x && screenX <= controlBtn.x + controlBtn.width &&
+            screenY >= controlBtn.y && screenY <= controlBtn.y + controlBtn.height) {
+            toggleMobileControls();
+            return true;
+        }
+    }
+    return false;
+}
+
+// Функция для обработки кликов в меню паузы
+function handlePauseMenuClick(screenX, screenY) {
+    if (window.pauseMenuButtons) {
+        // Клик на "Продолжить"
+        const continueBtn = window.pauseMenuButtons.continue;
+        if (screenX >= continueBtn.x && screenX <= continueBtn.x + continueBtn.width &&
+            screenY >= continueBtn.y && screenY <= continueBtn.y + continueBtn.height) {
+            gameState = 'playing';
+            return true;
+        }
+        
+        // Клик на "Сохранить"
+        const saveBtn = window.pauseMenuButtons.save;
+        if (screenX >= saveBtn.x && screenX <= saveBtn.x + saveBtn.width &&
+            screenY >= saveBtn.y && screenY <= saveBtn.y + saveBtn.height) {
+            saveGameState();
+            console.log('Игра сохранена через меню паузы');
+            return true;
+        }
+        
+        // Клик на "Главное меню"
+        const mainMenuBtn = window.pauseMenuButtons.mainMenu;
+        if (screenX >= mainMenuBtn.x && screenX <= mainMenuBtn.x + mainMenuBtn.width &&
+            screenY >= mainMenuBtn.y && screenY <= mainMenuBtn.y + mainMenuBtn.height) {
+            saveGameState(); // Автоматически сохраняем перед выходом
+            gameState = 'menu';
+            return true;
+        }
+    }
+    return false;
+}
+
 canvas.addEventListener('mousemove', function(e) {
     const rect = canvas.getBoundingClientRect();
     mouseX = e.clientX - rect.left + camera.x;
@@ -5348,55 +5576,16 @@ canvas.addEventListener('mousedown', function(e) {
     
     // Обработка кликов в главном меню
     if (gameState === 'menu') {
-        if (window.menuButtons) {
-            // Клик на "Новая игра"
-            const newGameBtn = window.menuButtons.newGame;
-            if (screenX >= newGameBtn.x && screenX <= newGameBtn.x + newGameBtn.width &&
-                screenY >= newGameBtn.y && screenY <= newGameBtn.y + newGameBtn.height) {
-                startNewGame();
-                return;
-            }
-            
-            // Клик на "Продолжить"
-            const continueBtn = window.menuButtons.continue;
-            if (screenX >= continueBtn.x && screenX <= continueBtn.x + continueBtn.width &&
-                screenY >= continueBtn.y && screenY <= continueBtn.y + continueBtn.height &&
-                hasSavedGame()) { // Проверяем, есть ли сохранение
-                continueGame();
-                return;
-            }
+        if (handleMenuClick(screenX, screenY)) {
+            return;
         }
         return; // Игнорируем все остальные клики в меню
     }
     
     // Обработка кликов в меню паузы
     if (gameState === 'paused') {
-        if (window.pauseMenuButtons) {
-            // Клик на "Продолжить"
-            const continueBtn = window.pauseMenuButtons.continue;
-            if (screenX >= continueBtn.x && screenX <= continueBtn.x + continueBtn.width &&
-                screenY >= continueBtn.y && screenY <= continueBtn.y + continueBtn.height) {
-                gameState = 'playing';
-                return;
-            }
-            
-            // Клик на "Сохранить"
-            const saveBtn = window.pauseMenuButtons.save;
-            if (screenX >= saveBtn.x && screenX <= saveBtn.x + saveBtn.width &&
-                screenY >= saveBtn.y && screenY <= saveBtn.y + saveBtn.height) {
-                saveGameState();
-                console.log('Игра сохранена через меню паузы');
-                return;
-            }
-            
-            // Клик на "Главное меню"
-            const mainMenuBtn = window.pauseMenuButtons.mainMenu;
-            if (screenX >= mainMenuBtn.x && screenX <= mainMenuBtn.x + mainMenuBtn.width &&
-                screenY >= mainMenuBtn.y && screenY <= mainMenuBtn.y + mainMenuBtn.height) {
-                saveGameState(); // Автоматически сохраняем перед выходом
-                gameState = 'menu';
-                return;
-            }
+        if (handlePauseMenuClick(screenX, screenY)) {
+            return;
         }
         return; // Игнорируем все остальные клики в меню паузы
     }
@@ -7130,11 +7319,43 @@ function drawMainMenu() {
     ctx.fillStyle = hasSave ? '#fff' : '#95a5a6';
     ctx.fillText('ПРОДОЛЖИТЬ', canvas.width / 2, continueButtonY + 32);
     
+    // Кнопка переключения управления
+    const controlButtonX = canvas.width / 2 - 75;
+    const controlButtonY = 460;
+    const controlButtonWidth = 150;
+    const controlButtonHeight = 40;
+    
+    ctx.fillStyle = showMobileControls ? '#e67e22' : '#9b59b6';
+    ctx.fillRect(controlButtonX, controlButtonY, controlButtonWidth, controlButtonHeight);
+    ctx.strokeStyle = showMobileControls ? '#f39c12' : '#8e44ad';
+    ctx.lineWidth = 2;
+    ctx.strokeRect(controlButtonX, controlButtonY, controlButtonWidth, controlButtonHeight);
+    
+    ctx.font = 'bold 16px Arial';
+    ctx.fillStyle = '#fff';
+    const controlText = showMobileControls ? '📱 MOBILE' : '💻 LAPTOP';
+    ctx.fillText(controlText, canvas.width / 2, controlButtonY + 26);
+    
     // Инструкции
     ctx.font = '16px Arial';
     ctx.fillStyle = '#fff200ff';
-    ctx.fillText('Управляйте племенем первобытных людей', canvas.width / 2, 500);
-    ctx.fillText('Собирайте ресурсы, стройте жилища, развивайтесь!', canvas.width / 2, 520);
+    ctx.fillText('Управляйте племенем первобытных людей', canvas.width / 2, 540);
+    ctx.fillText('Собирайте ресурсы, стройте жилища, развивайтесь!', canvas.width / 2, 560);
+    
+    // Информация о текущем режиме управления
+    ctx.font = '12px Arial';
+    ctx.fillStyle = '#95a5a6';
+    if (showMobileControls) {
+        ctx.fillText('Включены виртуальные кнопки и джойстик', canvas.width / 2, 590);
+        if (isMobile) {
+            ctx.fillText('(автоопределение мобильного устройства)', canvas.width / 2, 605);
+        }
+    } else {
+        ctx.fillText('Используйте клавиатуру: WASD - движение, Space - атака, E - действие', canvas.width / 2, 590);
+        if (!isMobile) {
+            ctx.fillText('(автоопределение настольного устройства)', canvas.width / 2, 605);
+        }
+    }
     
     // Сохраняем координаты кнопок для обработки кликов
     window.menuButtons = {
@@ -7149,22 +7370,29 @@ function drawMainMenu() {
             y: continueButtonY,
             width: buttonWidth,
             height: buttonHeight
+        },
+        controlMode: {
+            x: controlButtonX,
+            y: controlButtonY,
+            width: controlButtonWidth,
+            height: controlButtonHeight
         }
     };
 }
 
 function gameLoop() {
-    if (gameState === 'menu') {
-        drawMainMenu();
-    } else if (gameState === 'playing') {
-        updatePeople();
-        updateFlyingSpears(); // Обновляем летящие копья
-        updateSabertoothTigers();
-        updateDeer();
-        updateMammoths();
-        updateSteppeMammoths(); // Обновляем степных мамонтов
-        updateNeanderthals();
-        updateCamera();
+    try {
+        if (gameState === 'menu') {
+            drawMainMenu();
+        } else if (gameState === 'playing') {
+            updatePeople();
+            updateFlyingSpears(); // Обновляем летящие копья
+            updateSabertoothTigers();
+            updateDeer();
+            updateMammoths();
+            updateSteppeMammoths(); // Обновляем степных мамонтов
+            updateNeanderthals();
+            updateCamera();
         
         // Обновление таймера информации о кусте
         if (bushInfoTimer > 0) {
@@ -7187,6 +7415,10 @@ function gameLoop() {
         // В режиме паузы сначала рисуем игру, потом меню поверх
         draw();
         drawPauseMenu();
+    }
+    } catch (error) {
+        console.error('Error in gameLoop:', error);
+        // Продолжаем работу, чтобы игра не зависла
     }
     requestAnimationFrame(gameLoop);
 }
@@ -7212,6 +7444,312 @@ document.addEventListener('keydown', function(e) {
     }
 });
 
-// Запуск игры с главного меню
-gameLoop();
+// Функции для мобильного управления
+function drawMobileControls() {
+    if (!showMobileControls || gameState !== 'playing') return;
+    
+    drawMobileButtons(); // Только кнопки, джойстика больше нет
+}
+
+function drawMobileButtons() {
+    const buttons = mobileControls.buttons;
+    
+    ctx.save();
+    
+    // Кнопка меню
+    if (buttons.menu.visible) {
+        ctx.globalAlpha = buttons.menu.pressed ? 0.8 : 0.4;
+        ctx.fillStyle = '#4444ff';
+        ctx.beginPath();
+        ctx.arc(buttons.menu.x, buttons.menu.y, buttons.menu.radius, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.strokeStyle = '#ffffff';
+        ctx.lineWidth = 2;
+        ctx.stroke();
+        
+        // Иконка меню (три линии)
+        ctx.globalAlpha = 1;
+        ctx.fillStyle = '#ffffff';
+        ctx.font = 'bold 16px Arial';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillText('☰', buttons.menu.x, buttons.menu.y);
+    }
+    
+    ctx.restore();
+}
+
+// Обработчики touch событий для мобильного управления
+function handleTouchStart(e) {
+    e.preventDefault();
+    
+    // В главном меню обрабатываем touch события всегда (для кнопок меню)
+    if (gameState === 'menu') {
+        const touch = e.changedTouches[0];
+        const rect = canvas.getBoundingClientRect();
+        const x = touch.clientX - rect.left;
+        const y = touch.clientY - rect.top;
+        
+        // Обрабатываем как обычный клик мыши
+        handleMenuClick(x, y);
+        return;
+    }
+    
+    // В меню паузы также обрабатываем touch события
+    if (gameState === 'paused') {
+        const touch = e.changedTouches[0];
+        const rect = canvas.getBoundingClientRect();
+        const x = touch.clientX - rect.left;
+        const y = touch.clientY - rect.top;
+        
+        // Обрабатываем как обычный клик мыши
+        handlePauseMenuClick(x, y);
+        return;
+    }
+    
+    // Во время игры обрабатываем касания
+    if (gameState !== 'playing') return;
+    
+    const touches = e.changedTouches;
+    for (let i = 0; i < touches.length; i++) {
+        const touch = touches[i];
+        const rect = canvas.getBoundingClientRect();
+        const x = touch.clientX - rect.left;
+        const y = touch.clientY - rect.top;
+        
+        // Если включен мобильный режим - проверяем только кнопку меню
+        if (showMobileControls) {
+            const menuButton = mobileControls.buttons.menu;
+            const distToMenu = Math.sqrt(
+                Math.pow(x - menuButton.x, 2) + Math.pow(y - menuButton.y, 2)
+            );
+            
+            if (distToMenu <= menuButton.radius) {
+                menuButton.pressed = true;
+                mobileControls.touches.set(touch.identifier, { type: 'button', name: 'menu' });
+                handleMobileButtonPress('menu');
+                continue;
+            }
+        }
+        
+        // Если касание не попало на кнопку меню, обрабатываем как игровое взаимодействие
+        handleGameTouch(x, y);
+    }
+}
+
+function handleTouchMove(e) {
+    e.preventDefault();
+    
+    // В мобильном режиме больше нет джойстика для обработки движений
+}
+
+function handleGameTouch(x, y) {
+    // Эта функция обрабатывает касания игрового поля как клики мышью
+    // Конвертируем экранные координаты в мировые
+    const worldX = (x - canvas.width/2) + camera.x + canvas.width/2;
+    const worldY = (y - canvas.height/2) + camera.y + canvas.height/2;
+    
+    // Проверяем клики по панели населения (как в обработчике мыши)
+    let clickedOnUI = false;
+    people.forEach((p, idx) => {
+        if (p.uiX && x >= p.uiX && x <= p.uiX + p.uiWidth && 
+            y >= p.uiY && y <= p.uiY + p.uiHeight) {
+            // Выделяем этого персонажа
+            selectedPeople = [idx];
+            buildingMode = false;
+            buildingType = null;
+            
+            // Очищаем кнопки найма при выборе персонажей
+            window.reproductionHouseHireButton = null;
+            window.reproductionHouseHunterButton = null;
+            window.reproductionHouseTechButton = null;
+            window.warriorCampHireButton = null;
+            window.bonfireHireTorchbearerButton = null;
+            
+            clickedOnUI = true;
+            return;
+        }
+    });
+    
+    if (clickedOnUI) return;
+    
+    // Проверяем выбор человечка на карте
+    let found = false;
+    for (let i = people.length - 1; i >= 0; i--) {
+        const person = people[i];
+        const dist = Math.sqrt((worldX - person.x) ** 2 + (worldY - person.y) ** 2);
+        if (dist < 25) {
+            selectedPeople = [i];
+            found = true;
+            break;
+        }
+    }
+    
+    if (found) {
+        buildingMode = false;
+        buildingType = null;
+        window.reproductionHouseHireButton = null;
+        window.reproductionHouseHunterButton = null;
+        window.reproductionHouseTechButton = null;
+        window.warriorCampHireButton = null;
+        window.bonfireHireTorchbearerButton = null;
+        return;
+    }
+    
+    // Если есть выбранные персонажи - отправляем их к точке касания
+    if (selectedPeople.length > 0) {
+        // Проверяем атаку на неандертальцев
+        for (let neanderthal of neanderthals) {
+            const distToNeanderthal = Math.sqrt((worldX - neanderthal.x) ** 2 + (worldY - neanderthal.y) ** 2);
+            if (distToNeanderthal < 40) {
+                selectedPeople.forEach(personIdx => {
+                    if (people[personIdx]) {
+                        people[personIdx].combatTarget = neanderthal;
+                        people[personIdx].target = { x: neanderthal.x, y: neanderthal.y };
+                    }
+                });
+                return;
+            }
+        }
+        
+        // Проверяем атаку на мамонтов
+        for (let mammoth of mammoths) {
+            const distToMammoth = Math.sqrt((worldX - mammoth.x) ** 2 + (worldY - mammoth.y) ** 2);
+            if (distToMammoth < 50) {
+                selectedPeople.forEach(personIdx => {
+                    if (people[personIdx] && people[personIdx].type === 'hunter') {
+                        people[personIdx].huntTarget = mammoth;
+                        people[personIdx].target = { x: mammoth.x, y: mammoth.y };
+                        people[personIdx].butcherTarget = null;
+                    }
+                });
+                return;
+            }
+        }
+        
+        // Проверяем атаку на степных мамонтов
+        for (let steppeMammoth of steppeMammoths) {
+            const distToSteppeMammoth = Math.sqrt((worldX - steppeMammoth.x) ** 2 + (worldY - steppeMammoth.y) ** 2);
+            if (distToSteppeMammoth < 60) {
+                selectedPeople.forEach(personIdx => {
+                    if (people[personIdx] && people[personIdx].type === 'hunter') {
+                        people[personIdx].huntTarget = steppeMammoth;
+                        people[personIdx].target = { x: steppeMammoth.x, y: steppeMammoth.y };
+                        people[personIdx].butcherTarget = null;
+                    }
+                });
+                return;
+            }
+        }
+        
+        // Проверяем клик на тушу мамонта для разделки
+        for (let carcass of mammothCarcasses) {
+            const distToCarcass = Math.sqrt((worldX - carcass.x) ** 2 + (worldY - carcass.y) ** 2);
+            if (distToCarcass < 50 && carcass.food > 0) {
+                selectedPeople.forEach(personIdx => {
+                    if (people[personIdx] && people[personIdx].type === 'hunter') {
+                        people[personIdx].butcherTarget = carcass;
+                        people[personIdx].target = { x: carcass.x, y: carcass.y };
+                        people[personIdx].huntTarget = null;
+                    }
+                });
+                return;
+            }
+        }
+        
+        // Проверяем клик на тушу степного мамонта для разделки
+        for (let carcass of steppeMammothCarcasses) {
+            const distToCarcass = Math.sqrt((worldX - carcass.x) ** 2 + (worldY - carcass.y) ** 2);
+            if (distToCarcass < 70 && carcass.food > 0) {
+                selectedPeople.forEach(personIdx => {
+                    if (people[personIdx] && people[personIdx].type === 'hunter') {
+                        people[personIdx].butcherTarget = carcass;
+                        people[personIdx].target = { x: carcass.x, y: carcass.y };
+                        people[personIdx].huntTarget = null;
+                    }
+                });
+                return;
+            }
+        }
+        
+        // Обычное движение - назначаем цель всем выделенным персонажам с разбросом
+        selectedPeople.forEach((personIdx, i) => {
+            if (people[personIdx]) {
+                const offset = 30;
+                const angle = (i / selectedPeople.length) * Math.PI * 2;
+                const offsetX = Math.cos(angle) * offset;
+                const offsetY = Math.sin(angle) * offset;
+                
+                people[personIdx].target = { 
+                    x: worldX + offsetX, 
+                    y: worldY + offsetY 
+                };
+            }
+        });
+        return;
+    }
+    
+    // Сбрасываем выбранное здание при клике в пустое место
+    selectedBuilding = null;
+}
+
+function handleTouchEnd(e) {
+    e.preventDefault();
+    
+    // В меню не обрабатываем окончания касаний
+    if (gameState === 'menu' || gameState === 'paused') return;
+    
+    if (gameState !== 'playing' || !showMobileControls) return;
+    
+    const touches = e.changedTouches;
+    for (let i = 0; i < touches.length; i++) {
+        const touch = touches[i];
+        const touchData = mobileControls.touches.get(touch.identifier);
+        
+        if (touchData && touchData.type === 'button') {
+            mobileControls.buttons[touchData.name].pressed = false;
+            mobileControls.touches.delete(touch.identifier);
+        }
+    }
+}
+
+function handleMobileButtonPress(buttonName) {
+    switch (buttonName) {
+        case 'menu':
+            // Имитируем нажатие Escape для меню
+            simulateKeyPress('Escape');
+            break;
+    }
+}
+
+function simulateKeyPress(key) {
+    const event = new KeyboardEvent('keydown', {
+        key: key,
+        code: key === 'Escape' ? 'Escape' : key,
+        which: key === 'Escape' ? 27 : key.charCodeAt(0),
+        keyCode: key === 'Escape' ? 27 : key.charCodeAt(0)
+    });
+    document.dispatchEvent(event);
+}
+
+// Добавляем обработчики событий
+canvas.addEventListener('touchstart', handleTouchStart, { passive: false });
+canvas.addEventListener('touchmove', handleTouchMove, { passive: false });
+canvas.addEventListener('touchend', handleTouchEnd, { passive: false });
+canvas.addEventListener('touchcancel', handleTouchEnd, { passive: false });
+
+// Запуск игры после загрузки DOM
+document.addEventListener('DOMContentLoaded', function() {
+    console.log('DOM loaded, starting game loop');
+    gameLoop();
+});
+
+// Если DOM уже загружен (на случай поздней загрузки скрипта)
+if (document.readyState === 'loading') {
+    // DOM еще загружается, ждем события DOMContentLoaded
+} else {
+    // DOM уже загружен, запускаем сразу
+    console.log('DOM already loaded, starting game loop immediately');
+    gameLoop();
+}
 

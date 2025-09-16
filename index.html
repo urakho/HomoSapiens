@@ -2,6 +2,7 @@
 <html lang="ru">
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
     <title>Homo Sapiens Strategy</title>
     <style>
         body { 
@@ -10,10 +11,26 @@
             padding: 0; 
             overflow: hidden;
             background: #000;
+            touch-action: none; /* Предотвращает зум и скролл */
+            -webkit-touch-callout: none; /* Отключает контекстное меню на iOS */
+            -webkit-user-select: none; /* Отключает выделение текста */
+            -moz-user-select: none;
+            -ms-user-select: none;
+            user-select: none;
         }
         #gameCanvas {
             display: block;
             background: #007F0E;
+            touch-action: none; /* Важно для touch событий */
+        }
+        
+        /* Скрываем адресную строку на мобильных */
+        @media screen and (max-width: 768px) {
+            body {
+                position: fixed;
+                width: 100%;
+                height: 100%;
+            }
         }
     </style>
 </head>
