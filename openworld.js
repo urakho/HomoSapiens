@@ -2623,7 +2623,7 @@ function drawBuildingModal() {
     
     // Общая рамка вокруг всей таблицы зданий (2 столбца x 4 строки)
     const tableWidth = 2 * cellSize + cellSpacing;
-    const tableHeight = 4 * (cellSize * 0.7 + cellSpacing) - cellSpacing; // Убираем лишний отступ
+    const tableHeight = 4 * cellSize * 0.7 + 3 * cellSpacing; // 4 ячейки + 3 отступа между ними
     ctx.strokeStyle = '#fff';
     ctx.lineWidth = 2;
     ctx.strokeRect(gridStartX, gridStartY, tableWidth, tableHeight);
@@ -2824,6 +2824,40 @@ function drawReproductionHousePanel() {
         window.reproductionHouseTechButton = null;
     }
     
+    // Кнопка закрытия для мобильных устройств
+    const isMobile = showMobileControls || window.innerWidth <= 800;
+    if (isMobile) {
+        const closeButtonSize = 30;
+        const closeButtonX = panelX + panelWidth - closeButtonSize - 5;
+        const closeButtonY = panelY + 5;
+        
+        // Красный квадрат
+        ctx.fillStyle = '#e74c3c';
+        ctx.fillRect(closeButtonX, closeButtonY, closeButtonSize, closeButtonSize);
+        
+        // Белая рамка
+        ctx.strokeStyle = '#fff';
+        ctx.lineWidth = 2;
+        ctx.strokeRect(closeButtonX, closeButtonY, closeButtonSize, closeButtonSize);
+        
+        // Белый крестик
+        ctx.font = 'bold 20px Arial';
+        ctx.fillStyle = '#fff';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillText('×', closeButtonX + closeButtonSize/2, closeButtonY + closeButtonSize/2);
+        
+        // Сохраняем координаты для обработки кликов
+        window.reproductionHouseCloseButton = {
+            x: closeButtonX,
+            y: closeButtonY,
+            width: closeButtonSize,
+            height: closeButtonSize
+        };
+    } else {
+        window.reproductionHouseCloseButton = null;
+    }
+    
     ctx.restore();
 }
 
@@ -2961,6 +2995,40 @@ function drawWarriorCampPanel() {
         canHire: canHireSpearman
     };
     
+    // Кнопка закрытия для мобильных устройств
+    const isMobile = showMobileControls || window.innerWidth <= 800;
+    if (isMobile) {
+        const closeButtonSize = 30;
+        const closeButtonX = panelX + panelWidth - closeButtonSize - 5;
+        const closeButtonY = panelY + 5;
+        
+        // Красный квадрат
+        ctx.fillStyle = '#e74c3c';
+        ctx.fillRect(closeButtonX, closeButtonY, closeButtonSize, closeButtonSize);
+        
+        // Белая рамка
+        ctx.strokeStyle = '#fff';
+        ctx.lineWidth = 2;
+        ctx.strokeRect(closeButtonX, closeButtonY, closeButtonSize, closeButtonSize);
+        
+        // Белый крестик
+        ctx.font = 'bold 20px Arial';
+        ctx.fillStyle = '#fff';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillText('×', closeButtonX + closeButtonSize/2, closeButtonY + closeButtonSize/2);
+        
+        // Сохраняем координаты для обработки кликов
+        window.warriorCampCloseButton = {
+            x: closeButtonX,
+            y: closeButtonY,
+            width: closeButtonSize,
+            height: closeButtonSize
+        };
+    } else {
+        window.warriorCampCloseButton = null;
+    }
+    
     ctx.restore();
 }
 
@@ -3041,6 +3109,40 @@ function drawBonfirePanel() {
         height: buttonHeight,
         canHire: canHire
     };
+    
+    // Кнопка закрытия для мобильных устройств
+    const isMobile = showMobileControls || window.innerWidth <= 800;
+    if (isMobile) {
+        const closeButtonSize = 30;
+        const closeButtonX = panelX + panelWidth - closeButtonSize - 5;
+        const closeButtonY = panelY + 5;
+        
+        // Красный квадрат
+        ctx.fillStyle = '#e74c3c';
+        ctx.fillRect(closeButtonX, closeButtonY, closeButtonSize, closeButtonSize);
+        
+        // Белая рамка
+        ctx.strokeStyle = '#fff';
+        ctx.lineWidth = 2;
+        ctx.strokeRect(closeButtonX, closeButtonY, closeButtonSize, closeButtonSize);
+        
+        // Белый крестик
+        ctx.font = 'bold 20px Arial';
+        ctx.fillStyle = '#fff';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillText('×', closeButtonX + closeButtonSize/2, closeButtonY + closeButtonSize/2);
+        
+        // Сохраняем координаты для обработки кликов
+        window.bonfireCloseButton = {
+            x: closeButtonX,
+            y: closeButtonY,
+            width: closeButtonSize,
+            height: closeButtonSize
+        };
+    } else {
+        window.bonfireCloseButton = null;
+    }
     
     ctx.restore();
 }
@@ -5947,6 +6049,34 @@ canvas.addEventListener('mousedown', function(e) {
         console.log('Клик по панели строительства - блокируем движение');
     }
     
+    // Проверяем клики по кнопкам закрытия модальных окон зданий (для мобильных)
+    if (window.reproductionHouseCloseButton) {
+        const btn = window.reproductionHouseCloseButton;
+        if (screenX >= btn.x && screenX <= btn.x + btn.width && 
+            screenY >= btn.y && screenY <= btn.y + btn.height) {
+            selectedBuilding = null;
+            return;
+        }
+    }
+    
+    if (window.warriorCampCloseButton) {
+        const btn = window.warriorCampCloseButton;
+        if (screenX >= btn.x && screenX <= btn.x + btn.width && 
+            screenY >= btn.y && screenY <= btn.y + btn.height) {
+            selectedBuilding = null;
+            return;
+        }
+    }
+    
+    if (window.bonfireCloseButton) {
+        const btn = window.bonfireCloseButton;
+        if (screenX >= btn.x && screenX <= btn.x + btn.width && 
+            screenY >= btn.y && screenY <= btn.y + btn.height) {
+            selectedBuilding = null;
+            return;
+        }
+    }
+    
     // Проверяем клик на кнопку найма в интерфейсе хижины рода
     if (window.reproductionHouseHireButton) {
         const btn = window.reproductionHouseHireButton;
@@ -7932,6 +8062,37 @@ function handleGameTouch(x, y) {
             y >= btn.y && y <= btn.y + btn.height) {
             console.log('Touch - Клик по кнопке ОТКРЫТЬ! Открываем модальное окно');
             showBuildingModal = true;
+            return;
+        }
+    }
+    
+    // Проверяем клики по кнопкам закрытия модальных окон зданий
+    if (window.reproductionHouseCloseButton) {
+        const btn = window.reproductionHouseCloseButton;
+        if (x >= btn.x && x <= btn.x + btn.width && 
+            y >= btn.y && y <= btn.y + btn.height) {
+            selectedBuilding = null;
+            console.log('Touch - Закрыта панель хижины рода');
+            return;
+        }
+    }
+    
+    if (window.warriorCampCloseButton) {
+        const btn = window.warriorCampCloseButton;
+        if (x >= btn.x && x <= btn.x + btn.width && 
+            y >= btn.y && y <= btn.y + btn.height) {
+            selectedBuilding = null;
+            console.log('Touch - Закрыта панель лагеря воинов');
+            return;
+        }
+    }
+    
+    if (window.bonfireCloseButton) {
+        const btn = window.bonfireCloseButton;
+        if (x >= btn.x && x <= btn.x + btn.width && 
+            y >= btn.y && y <= btn.y + btn.height) {
+            selectedBuilding = null;
+            console.log('Touch - Закрыта панель костра');
             return;
         }
     }
