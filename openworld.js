@@ -2615,9 +2615,9 @@ function drawBuildingModal() {
         }
     }
     
-    // Общая рамка вокруг всей таблицы зданий
+    // Общая рамка вокруг всей таблицы зданий (2 столбца x 4 строки)
     const tableWidth = 2 * cellSize + cellSpacing;
-    const tableHeight = 4 * (cellSize * 0.7 + cellSpacing) - cellSpacing;
+    const tableHeight = 4 * (cellSize * 0.7) + 3 * cellSpacing;
     ctx.strokeStyle = '#fff';
     ctx.lineWidth = 2;
     ctx.strokeRect(gridStartX, gridStartY, tableWidth, tableHeight);
@@ -7947,12 +7947,12 @@ function handleGameTouch(x, y) {
         if (window.buildingModalButtons) {
             for (const btn of window.buildingModalButtons) {
                 if (x >= btn.x && x <= btn.x + btn.width && 
-                    y >= btn.y && y <= btn.y + btn.height && btn.canBuild) {
+                    y >= btn.y && y <= btn.y + btn.height) {
                     // Активируем режим строительства выбранного здания
                     buildingMode = true;
                     buildingType = btn.type;
                     showBuildingModal = false; // Закрываем модальное окно
-                    console.log('Touch - Выбрано здание для строительства:', btn.type);
+                    console.log('Touch - Выбрано здание для строительства:', btn.type, 'buildingMode:', buildingMode);
                     return;
                 }
             }
@@ -7994,6 +7994,14 @@ function handleGameTouch(x, y) {
     // ===== ЛОГИКА СТРОИТЕЛЬСТВА =====
     // Если в режиме строительства, строим здание
     const hasBuilders = people.some(p => p.type === 'builder' || p.type === 'civilian');
+    console.log('Touch - Проверка строительства:', {
+        buildingMode, 
+        buildingType, 
+        hasBuilders, 
+        peopleCount: people.length,
+        peopleTypes: people.map(p => p.type)
+    });
+    
     if (buildingMode && buildingType && hasBuilders) {
         if (buildingType === 'house' && resources.wood >= 10) {
             // Проверяем, не слишком ли близко к другим зданиям
@@ -8155,6 +8163,12 @@ function handleGameTouch(x, y) {
         
         // Если в режиме строительства но не удалось построить - просто возвращаемся
         console.log('Touch - Не удалось построить:', buildingType, 'Ресурсы:', resources);
+        return;
+    }
+    
+    // Если НЕ в режиме строительства, продолжаем обычную логику
+    if (buildingMode && buildingType) {
+        console.log('Touch - В режиме строительства, но нет строителей. Возвращаемся.');
         return;
     }
     
