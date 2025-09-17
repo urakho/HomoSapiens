@@ -271,9 +271,15 @@ function updateMobileControlsPosition() {
     mobileControls.buttons.attack.visible = false;
     mobileControls.buttons.interact.visible = false;
     
-    // Кнопка меню в правом верхнем углу
-    mobileControls.buttons.menu.x = canvas.width - menuButtonRadius - baseMargin;
-    mobileControls.buttons.menu.y = menuButtonRadius + baseMargin;
+    // Кнопка меню в правом верхнем углу панели ресурсов
+    const resourceBarHeight = isSmallScreen ? 40 : 60;
+    const menuButtonWidth = 50;
+    const menuButtonHeight = 25;
+    
+    mobileControls.buttons.menu.x = canvas.width - menuButtonWidth - 10;
+    mobileControls.buttons.menu.y = 7;
+    mobileControls.buttons.menu.width = menuButtonWidth;
+    mobileControls.buttons.menu.height = menuButtonHeight;
     mobileControls.buttons.menu.visible = true;
     
     // Отладка позиции кнопки меню (только в первый раз)
@@ -2617,7 +2623,7 @@ function drawBuildingModal() {
     
     // Общая рамка вокруг всей таблицы зданий (2 столбца x 4 строки)
     const tableWidth = 2 * cellSize + cellSpacing;
-    const tableHeight = 4 * (cellSize * 0.7) + 3 * cellSpacing;
+    const tableHeight = 4 * (cellSize * 0.7 + cellSpacing) - cellSpacing; // Убираем лишний отступ
     ctx.strokeStyle = '#fff';
     ctx.lineWidth = 2;
     ctx.strokeRect(gridStartX, gridStartY, tableWidth, tableHeight);
@@ -7825,22 +7831,23 @@ function drawMobileButtons() {
     
     // Кнопка меню
     if (buttons.menu.visible) {
-        ctx.globalAlpha = buttons.menu.pressed ? 0.9 : 0.7; // Увеличили прозрачность
+        ctx.globalAlpha = buttons.menu.pressed ? 0.9 : 0.7;
         ctx.fillStyle = '#4444ff';
-        ctx.beginPath();
-        ctx.arc(buttons.menu.x, buttons.menu.y, buttons.menu.radius, 0, Math.PI * 2);
-        ctx.fill();
+        
+        // Рисуем прямоугольную кнопку
+        ctx.fillRect(buttons.menu.x, buttons.menu.y, buttons.menu.width, buttons.menu.height);
+        
         ctx.strokeStyle = '#ffffff';
-        ctx.lineWidth = 3; // Увеличили толщину границы
-        ctx.stroke();
+        ctx.lineWidth = 2;
+        ctx.strokeRect(buttons.menu.x, buttons.menu.y, buttons.menu.width, buttons.menu.height);
         
         // Иконка меню (три линии)
         ctx.globalAlpha = 1;
         ctx.fillStyle = '#ffffff';
-        ctx.font = 'bold 20px Arial'; // Увеличили размер иконки
+        ctx.font = 'bold 16px Arial';
         ctx.textAlign = 'center';
         ctx.textBaseline = 'middle';
-        ctx.fillText('☰', buttons.menu.x, buttons.menu.y);
+        ctx.fillText('☰', buttons.menu.x + buttons.menu.width/2, buttons.menu.y + buttons.menu.height/2);
     }
     
     ctx.restore();
@@ -7887,11 +7894,9 @@ function handleTouchStart(e) {
         // Если включен мобильный режим - проверяем только кнопку меню
         if (showMobileControls) {
             const menuButton = mobileControls.buttons.menu;
-            const distToMenu = Math.sqrt(
-                Math.pow(x - menuButton.x, 2) + Math.pow(y - menuButton.y, 2)
-            );
-            
-            if (distToMenu <= menuButton.radius) {
+            // Проверяем прямоугольную область кнопки меню
+            if (x >= menuButton.x && x <= menuButton.x + menuButton.width &&
+                y >= menuButton.y && y <= menuButton.y + menuButton.height) {
                 menuButton.pressed = true;
                 mobileControls.touches.set(touch.identifier, { type: 'button', name: 'menu' });
                 handleMobileButtonPress('menu');
@@ -8194,6 +8199,40 @@ function handleGameTouch(x, y) {
         window.bonfireHireTorchbearerButton = null;
         return;
     }
+    
+    // Проверяем тап на здания (для открытия модалок зданий)
+    buildings.forEach(building => {
+        const distanceToBuilding = Math.sqrt((worldX - building.x) ** 2 + (worldY - building.y) ** 2);
+        if (distanceToBuilding < 60) { // Область тапа по зданию
+            selectedBuilding = building;
+            buildingMode = false;
+            buildingType = null;
+            found = true;
+            console.log('Touch - Выбрано здание:', building.type);
+            
+            // Специальная обработка для фермы - назначаем работников
+            if (building.type === 'farm' && selectedPeople.length > 0) {
+                selectedPeople.forEach(personIdx => {
+                    const person = people[personIdx];
+                    if (person && person.type === 'civilian' && !person.farmWork) {
+                        // Назначаем мирного жителя работать на ферму
+                        if (building.workers.length < 3) { // Максимум 3 работника на ферму
+                            building.workers.push(person);
+                            person.farmWork = building;
+                            person.target = { x: building.x + (Math.random() - 0.5) * 160, y: building.y + 60 };
+                            person.lastAction = 'Идет работать на ферму';
+                            person.statusDisplayTimer = 120;
+                            console.log("Touch - Работник назначен на ферму");
+                        }
+                    }
+                });
+            }
+            return; // Важно: выходим из функции после выбора здания
+        }
+    });
+    
+    // Если здание было выбрано, не продолжаем дальше
+    if (found) return;
     
     // Если есть выбранные персонажи - отправляем их к точке касания
     if (selectedPeople.length > 0) {
