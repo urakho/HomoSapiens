@@ -2187,6 +2187,7 @@ function drawResources() {
 let buildingMode = false;
 let buildingType = null;
 let selectedBuilding = null;
+let showBuildingModal = false; // Модальное окно для мобильных устройств
 
 function drawBuildingPanel() {
     // Показываем панель строительства только если выбран хотя бы один гражданский персонаж
@@ -2198,6 +2199,16 @@ function drawBuildingPanel() {
     const isMobile = showMobileControls || window.innerWidth <= 800;
     const panelHeight = isMobile ? 80 : 120; // Уменьшили с 120 до 80 для мобильных
     const panelY = canvas.height - panelHeight;
+    
+    // Отладка мобильного режима (только первый раз)
+    if (!window.buildingPanelDebugShown) {
+        console.log('=== BUILDING PANEL DEBUG ===');
+        console.log('showMobileControls:', showMobileControls);
+        console.log('window.innerWidth:', window.innerWidth);
+        console.log('isMobile:', isMobile);
+        console.log('========================');
+        window.buildingPanelDebugShown = true;
+    }
     
     // Фон панели
     ctx.fillStyle = 'rgba(0, 0, 0, 0.9)';
@@ -2211,14 +2222,46 @@ function drawBuildingPanel() {
     ctx.textAlign = 'left';
     ctx.fillText('Строительство', 20, panelY + 25);
     
-    // Кнопка жилища
-    const houseButtonX = 20;
-    const houseButtonY = panelY + (isMobile ? 30 : 40); // Адаптивная позиция по Y
-    const buttonWidth = isMobile ? 100 : 120; // Уменьшили ширину кнопок для мобильных
-    const buttonHeight = isMobile ? 25 : 35; // Уменьшили высоту кнопок для мобильных
-    
-    // Проверяем, достаточно ли ресурсов для жилища (требуется 10 дерева)
-    const canBuildHouse = resources.wood >= 10;
+    if (isMobile) {
+        // Мобильная версия - только кнопка "ОТКРЫТЬ"
+        const openButtonX = 20;
+        const openButtonY = panelY + 35;
+        const openButtonWidth = 120;
+        const openButtonHeight = 30;
+        
+        // Фон кнопки "ОТКРЫТЬ"
+        ctx.fillStyle = '#3498db';
+        ctx.fillRect(openButtonX, openButtonY, openButtonWidth, openButtonHeight);
+        
+        // Рамка кнопки
+        ctx.strokeStyle = '#fff';
+        ctx.lineWidth = 2;
+        ctx.strokeRect(openButtonX, openButtonY, openButtonWidth, openButtonHeight);
+        
+        // Текст кнопки
+        ctx.font = 'bold 16px Arial';
+        ctx.fillStyle = '#fff';
+        ctx.textAlign = 'center';
+        ctx.fillText('ОТКРЫТЬ', openButtonX + openButtonWidth/2, openButtonY + openButtonHeight/2 + 5);
+        
+        // Сохраняем координаты кнопки для обработки кликов
+        window.openBuildingModalButton = {
+            x: openButtonX,
+            y: openButtonY,
+            width: openButtonWidth,
+            height: openButtonHeight
+        };
+    } else {
+        // Десктопная версия - обычные кнопки зданий
+        const buttonWidth = 120;
+        const buttonHeight = 35;
+        
+        // Кнопка жилища
+        const houseButtonX = 20;
+        const houseButtonY = panelY + 40;
+        
+        // Проверяем, достаточно ли ресурсов для жилища (требуется 10 дерева)
+        const canBuildHouse = resources.wood >= 10;
     
     // Фон кнопки
     ctx.fillStyle = canBuildHouse ? (buildingMode && buildingType === 'house' ? '#27ae60' : '#34495e') : '#7f8c8d';
@@ -2395,12 +2438,18 @@ function drawBuildingPanel() {
         canBuild: canBuildWarriorCamp
     };
     
+    } // Закрываем блок else для десктопа
+    
     ctx.restore();
 }
 
 // Функция для отображения центрированных сообщений о строительстве
 function drawBuildingMessage() {
     if (!buildingMode || !buildingType) return;
+    
+    // Не показываем сообщения на мобильных устройствах
+    const isMobile = showMobileControls || window.innerWidth <= 800;
+    if (isMobile) return;
     
     let message = '';
     let color = '#fff';
@@ -2440,9 +2489,7 @@ function drawBuildingMessage() {
         ctx.fillStyle = 'rgba(0, 0, 0, 0.8)';
         ctx.fillRect(messageX, messageY, messageWidth, messageHeight);
         
-        ctx.strokeStyle = color;
-        ctx.lineWidth = 2;
-        ctx.strokeRect(messageX, messageY, messageWidth, messageHeight);
+        // Убрали рамку - оставляем только фон и текст
         
         // Центрированный текст
         ctx.font = '16px Arial';
@@ -2453,6 +2500,149 @@ function drawBuildingMessage() {
         
         ctx.restore();
     }
+}
+
+// Функция для отображения модального окна с сеткой зданий (для мобильных)
+function drawBuildingModal() {
+    if (!showBuildingModal) return;
+    
+    ctx.save();
+    
+    // Полупрозрачный фон
+    ctx.fillStyle = 'rgba(0, 0, 0, 0.7)';
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+    
+    // Размеры модального окна
+    const modalWidth = Math.min(400, canvas.width - 40);
+    const modalHeight = Math.min(350, canvas.height - 80);
+    const modalX = (canvas.width - modalWidth) / 2;
+    const modalY = (canvas.height - modalHeight) / 2;
+    
+    // Фон модального окна
+    ctx.fillStyle = 'rgba(40, 40, 40, 0.95)';
+    ctx.fillRect(modalX, modalY, modalWidth, modalHeight);
+    
+    // Рамка модального окна
+    ctx.strokeStyle = '#fff';
+    ctx.lineWidth = 2;
+    ctx.strokeRect(modalX, modalY, modalWidth, modalHeight);
+    
+    // Заголовок
+    ctx.font = 'bold 20px Arial';
+    ctx.fillStyle = '#fff';
+    ctx.textAlign = 'center';
+    ctx.fillText('Строительство', modalX + modalWidth/2, modalY + 30);
+    
+    // Сетка зданий 2x4
+    const gridStartX = modalX + 20;
+    const gridStartY = modalY + 50;
+    const cellSize = (modalWidth - 60) / 2; // 2 колонки
+    const cellSpacing = 10;
+    
+    // Определяем доступные здания в зависимости от эпохи
+    const buildings = [
+        { type: 'house', icon: '🏠', name: 'Жилище', cost: '10 дерева', canBuild: resources.wood >= 10 },
+        { type: 'reproduction_house', icon: '🏘️', name: 'Хижина рода', cost: '15 дерева, 5 камня', canBuild: resources.wood >= 15 && resources.stone >= 5 },
+        { type: 'warrior_camp', icon: '⚔️', name: 'Лагерь воинов', cost: '20 дерева, 10 камня', canBuild: resources.wood >= 20 && resources.stone >= 10 },
+        { type: 'bonfire', icon: '🔥', name: 'Костер', cost: '10 дерева, 5 камня', canBuild: canBuildInCurrentEra('bonfire') && resources.wood >= 10 && resources.stone >= 5 },
+        { type: 'farm', icon: '🌾', name: 'Ферма', cost: '10 дерева', canBuild: canBuildInCurrentEra('farm') && resources.wood >= 10 },
+        null, // Пустая ячейка
+        null, // Пустая ячейка
+        null  // Пустая ячейка
+    ];
+    
+    // Сохраняем координаты кнопок для обработки кликов
+    window.buildingModalButtons = [];
+    
+    // Рисуем сетку зданий
+    for (let row = 0; row < 4; row++) {
+        for (let col = 0; col < 2; col++) {
+            const index = row * 2 + col;
+            const building = buildings[index];
+            
+            const cellX = gridStartX + col * (cellSize + cellSpacing);
+            const cellY = gridStartY + row * (cellSize * 0.7 + cellSpacing);
+            const cellWidth = cellSize;
+            const cellHeight = cellSize * 0.7;
+            
+            if (building) {
+                // Фон ячейки
+                ctx.fillStyle = building.canBuild ? '#34495e' : '#7f8c8d';
+                ctx.fillRect(cellX, cellY, cellWidth, cellHeight);
+                
+                // Рамка ячейки
+                ctx.strokeStyle = building.canBuild ? '#fff' : '#95a5a6';
+                ctx.lineWidth = 1;
+                ctx.strokeRect(cellX, cellY, cellWidth, cellHeight);
+                
+                // Иконка здания
+                ctx.font = '30px Arial';
+                ctx.fillStyle = building.canBuild ? '#fff' : '#95a5a6';
+                ctx.textAlign = 'center';
+                ctx.fillText(building.icon, cellX + cellWidth/2, cellY + 30);
+                
+                // Название здания
+                ctx.font = '12px Arial';
+                ctx.fillText(building.name, cellX + cellWidth/2, cellY + 50);
+                
+                // Стоимость
+                ctx.font = '10px Arial';
+                ctx.fillStyle = building.canBuild ? '#bdc3c7' : '#7f8c8d';
+                ctx.fillText(building.cost, cellX + cellWidth/2, cellY + 65);
+                
+                // Сохраняем координаты для обработки кликов
+                window.buildingModalButtons.push({
+                    type: building.type,
+                    x: cellX,
+                    y: cellY,
+                    width: cellWidth,
+                    height: cellHeight,
+                    canBuild: building.canBuild
+                });
+            } else {
+                // Пустая ячейка
+                ctx.fillStyle = '#2c3e50';
+                ctx.fillRect(cellX, cellY, cellWidth, cellHeight);
+                
+                ctx.strokeStyle = '#34495e';
+                ctx.lineWidth = 1;
+                ctx.strokeRect(cellX, cellY, cellWidth, cellHeight);
+                
+                // Знак пустой ячейки
+                ctx.font = '20px Arial';
+                ctx.fillStyle = '#7f8c8d';
+                ctx.textAlign = 'center';
+                ctx.fillText('—', cellX + cellWidth/2, cellY + cellHeight/2 + 5);
+            }
+        }
+    }
+    
+    // Кнопка закрытия
+    const closeButtonX = modalX + modalWidth - 40;
+    const closeButtonY = modalY + 10;
+    const closeButtonSize = 30;
+    
+    ctx.fillStyle = '#e74c3c';
+    ctx.fillRect(closeButtonX, closeButtonY, closeButtonSize, closeButtonSize);
+    
+    ctx.strokeStyle = '#fff';
+    ctx.lineWidth = 2;
+    ctx.strokeRect(closeButtonX, closeButtonY, closeButtonSize, closeButtonSize);
+    
+    ctx.font = 'bold 20px Arial';
+    ctx.fillStyle = '#fff';
+    ctx.textAlign = 'center';
+    ctx.fillText('×', closeButtonX + closeButtonSize/2, closeButtonY + closeButtonSize/2 + 5);
+    
+    // Сохраняем координаты кнопки закрытия
+    window.buildingModalCloseButton = {
+        x: closeButtonX,
+        y: closeButtonY,
+        width: closeButtonSize,
+        height: closeButtonSize
+    };
+    
+    ctx.restore();
 }
 
 // Функция для добавления сообщений в панель населения
@@ -4255,6 +4445,7 @@ function drawSurface() {
     drawPopulation(); // Рисуем панель населения
     drawBuildingPanel(); // Рисуем панель строительства
     drawBuildingMessage(); // Рисуем центрированное сообщение о строительстве
+    drawBuildingModal(); // Рисуем модальное окно для мобильных
     drawReproductionHousePanel(); // Рисуем панель хижины рода
     drawWarriorCampPanel(); // Рисуем панель лагеря воинов
     drawBonfirePanel(); // Рисуем панель костра
@@ -4326,6 +4517,7 @@ function drawCaveWorld() {
     drawPopulation();
     drawBuildingPanel();
     drawBuildingMessage(); // Рисуем центрированное сообщение о строительстве
+    drawBuildingModal(); // Рисуем модальное окно для мобильных
     drawReproductionHousePanel();
     drawWarriorCampPanel();
     drawBonfirePanel();
@@ -6182,6 +6374,54 @@ canvas.addEventListener('mousedown', function(e) {
             }
         }
         return;
+    }
+    
+    // Обработка кликов по модальному окну строительства (для мобильных)
+    if (showBuildingModal) {
+        // Проверяем клик на кнопку закрытия
+        if (window.buildingModalCloseButton) {
+            const btn = window.buildingModalCloseButton;
+            if (screenX >= btn.x && screenX <= btn.x + btn.width && 
+                screenY >= btn.y && screenY <= btn.y + btn.height) {
+                showBuildingModal = false;
+                return;
+            }
+        }
+        
+        // Проверяем клики на здания в модальном окне
+        if (window.buildingModalButtons) {
+            for (const btn of window.buildingModalButtons) {
+                if (screenX >= btn.x && screenX <= btn.x + btn.width && 
+                    screenY >= btn.y && screenY <= btn.y + btn.height && btn.canBuild) {
+                    // Активируем режим строительства выбранного здания
+                    buildingMode = true;
+                    buildingType = btn.type;
+                    showBuildingModal = false; // Закрываем модальное окно
+                    return;
+                }
+            }
+        }
+        
+        // Если клик был в модальном окне, но не по кнопкам - игнорируем
+        return;
+    }
+    
+    // Обработка клика по кнопке "ОТКРЫТЬ" (для мобильных)
+    if (window.openBuildingModalButton) {
+        const btn = window.openBuildingModalButton;
+        console.log('Проверяем клик по кнопке ОТКРЫТЬ:', {
+            screenX, screenY, 
+            btnX: btn.x, btnY: btn.y, 
+            btnWidth: btn.width, btnHeight: btn.height,
+            inX: screenX >= btn.x && screenX <= btn.x + btn.width,
+            inY: screenY >= btn.y && screenY <= btn.y + btn.height
+        });
+        if (screenX >= btn.x && screenX <= btn.x + btn.width && 
+            screenY >= btn.y && screenY <= btn.y + btn.height) {
+            console.log('Клик по кнопке ОТКРЫТЬ! Открываем модальное окно');
+            isBuildingModalVisible = true;
+            return;
+        }
     }
     
     // Проверяем клики по панели населения
