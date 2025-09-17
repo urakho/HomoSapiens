@@ -2194,7 +2194,9 @@ function drawBuildingPanel() {
     const hasAnyBuilders = selectedPeople.some(idx => people[idx] && people[idx].type === 'civilian');
     if (!hasAnyBuilders) return;
     
-    const panelHeight = 120;
+    // Адаптивная высота панели для мобильных устройств
+    const isMobile = showMobileControls || window.innerWidth <= 800;
+    const panelHeight = isMobile ? 80 : 120; // Уменьшили с 120 до 80 для мобильных
     const panelY = canvas.height - panelHeight;
     
     // Фон панели
@@ -2211,9 +2213,9 @@ function drawBuildingPanel() {
     
     // Кнопка жилища
     const houseButtonX = 20;
-    const houseButtonY = panelY + 40;
-    const buttonWidth = 120;
-    const buttonHeight = 35;
+    const houseButtonY = panelY + (isMobile ? 30 : 40); // Адаптивная позиция по Y
+    const buttonWidth = isMobile ? 100 : 120; // Уменьшили ширину кнопок для мобильных
+    const buttonHeight = isMobile ? 25 : 35; // Уменьшили высоту кнопок для мобильных
     
     // Проверяем, достаточно ли ресурсов для жилища (требуется 10 дерева)
     const canBuildHouse = resources.wood >= 10;
@@ -2239,8 +2241,8 @@ function drawBuildingPanel() {
     ctx.fillText('10 дерева', houseButtonX + buttonWidth/2, houseButtonY + buttonHeight + 15);
     
     // Кнопка дома размножения
-    const reproductionHouseButtonX = 160;
-    const reproductionHouseButtonY = panelY + 40;
+    const reproductionHouseButtonX = isMobile ? 130 : 160; // Адаптивная позиция X
+    const reproductionHouseButtonY = panelY + (isMobile ? 30 : 40);
     
     // Проверяем, достаточно ли ресурсов для дома размножения (требуется 15 дерева и 5 камня)
     const canBuildReproductionHouse = resources.wood >= 15 && resources.stone >= 5;
@@ -2266,8 +2268,8 @@ function drawBuildingPanel() {
     ctx.fillText('15 дерева, 5 камня', reproductionHouseButtonX + buttonWidth/2, reproductionHouseButtonY + buttonHeight + 15);
     
     // Кнопка лагеря воинов
-    const warriorCampButtonX = 300;
-    const warriorCampButtonY = panelY + 40;
+    const warriorCampButtonX = isMobile ? 240 : 300; // Адаптивная позиция X
+    const warriorCampButtonY = panelY + (isMobile ? 30 : 40);
     
     // Проверяем, достаточно ли ресурсов для лагеря воинов (требуется 20 дерева и 10 камня)
     const canBuildWarriorCamp = resources.wood >= 20 && resources.stone >= 10;
@@ -2294,8 +2296,8 @@ function drawBuildingPanel() {
     
     // Кнопка костра (только в костяной эпохе)
     if (canBuildInCurrentEra('bonfire')) {
-        const bonfireButtonX = 440;
-        const bonfireButtonY = panelY + 40;
+        const bonfireButtonX = isMobile ? 350 : 440; // Адаптивная позиция X
+        const bonfireButtonY = panelY + (isMobile ? 30 : 40);
         
         // Проверяем, достаточно ли ресурсов для костра (требуется 10 дерева и 5 камня)
         const canBuildBonfire = resources.wood >= 10 && resources.stone >= 5;
@@ -2332,8 +2334,8 @@ function drawBuildingPanel() {
     
     // Кнопка фермы (только в костяной эпохе)
     if (canBuildInCurrentEra('farm')) {
-        const farmButtonX = 580;
-        const farmButtonY = panelY + 40;
+        const farmButtonX = isMobile ? 460 : 580; // Адаптивная позиция X
+        const farmButtonY = panelY + (isMobile ? 30 : 40);
         
         // Проверяем, достаточно ли ресурсов для фермы (требуется 10 дерева)
         const canBuildFarm = resources.wood >= 10;
@@ -2368,34 +2370,6 @@ function drawBuildingPanel() {
         };
     }
     
-    // Инструкция
-    if (buildingMode && buildingType === 'house') {
-        ctx.font = '14px Arial';
-        ctx.fillStyle = '#f39c12';
-        ctx.textAlign = 'left';
-        ctx.fillText('Кликните на карту, чтобы построить жилище (+5 места)', 440, panelY + 60);
-    } else if (buildingMode && buildingType === 'reproduction_house') {
-        ctx.font = '14px Arial';
-        ctx.fillStyle = '#e74c3c';
-        ctx.textAlign = 'left';
-        ctx.fillText('Кликните на карту, чтобы построить хижину рода (разрешает найм)', 440, panelY + 60);
-    } else if (buildingMode && buildingType === 'warrior_camp') {
-        ctx.font = '14px Arial';
-        ctx.fillStyle = '#8e44ad';
-        ctx.textAlign = 'left';
-        ctx.fillText('Кликните на карту, чтобы построить лагерь воинов (найм воинов)', 440, panelY + 60);
-    } else if (buildingMode && buildingType === 'bonfire') {
-        ctx.font = '14px Arial';
-        ctx.fillStyle = '#e67e22';
-        ctx.textAlign = 'left';
-        ctx.fillText('Кликните на карту, чтобы построить костер (найм факельщиков)', 440, panelY + 60);
-    } else if (buildingMode && buildingType === 'farm') {
-        ctx.font = '14px Arial';
-        ctx.fillStyle = '#27ae60';
-        ctx.textAlign = 'left';
-        ctx.fillText('Кликните на карту, чтобы построить ферму (производство еды)', 440, panelY + 60);
-    }
-    
     // Сохраняем координаты кнопок для обработки кликов
     window.houseButtonBounds = {
         x: houseButtonX,
@@ -2422,6 +2396,63 @@ function drawBuildingPanel() {
     };
     
     ctx.restore();
+}
+
+// Функция для отображения центрированных сообщений о строительстве
+function drawBuildingMessage() {
+    if (!buildingMode || !buildingType) return;
+    
+    let message = '';
+    let color = '#fff';
+    
+    switch(buildingType) {
+        case 'house':
+            message = 'Кликните на карту, чтобы построить жилище (+5 места)';
+            color = '#f39c12';
+            break;
+        case 'reproduction_house':
+            message = 'Кликните на карту, чтобы построить хижину рода (разрешает найм)';
+            color = '#e74c3c';
+            break;
+        case 'warrior_camp':
+            message = 'Кликните на карту, чтобы построить лагерь воинов (найм воинов)';
+            color = '#8e44ad';
+            break;
+        case 'bonfire':
+            message = 'Кликните на карту, чтобы построить костер (найм факельщиков)';
+            color = '#e67e22';
+            break;
+        case 'farm':
+            message = 'Кликните на карту, чтобы построить ферму (производство еды)';
+            color = '#27ae60';
+            break;
+    }
+    
+    if (message) {
+        ctx.save();
+        
+        // Полупрозрачный фон для сообщения
+        const messageWidth = ctx.measureText(message).width + 40;
+        const messageHeight = 50;
+        const messageX = (canvas.width - messageWidth) / 2;
+        const messageY = (canvas.height - messageHeight) / 2;
+        
+        ctx.fillStyle = 'rgba(0, 0, 0, 0.8)';
+        ctx.fillRect(messageX, messageY, messageWidth, messageHeight);
+        
+        ctx.strokeStyle = color;
+        ctx.lineWidth = 2;
+        ctx.strokeRect(messageX, messageY, messageWidth, messageHeight);
+        
+        // Центрированный текст
+        ctx.font = '16px Arial';
+        ctx.fillStyle = color;
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillText(message, canvas.width / 2, canvas.height / 2);
+        
+        ctx.restore();
+    }
 }
 
 // Функция для добавления сообщений в панель населения
@@ -4223,6 +4254,7 @@ function drawSurface() {
     drawResources(); // Рисуем ресурсы поверх всего
     drawPopulation(); // Рисуем панель населения
     drawBuildingPanel(); // Рисуем панель строительства
+    drawBuildingMessage(); // Рисуем центрированное сообщение о строительстве
     drawReproductionHousePanel(); // Рисуем панель хижины рода
     drawWarriorCampPanel(); // Рисуем панель лагеря воинов
     drawBonfirePanel(); // Рисуем панель костра
@@ -4293,6 +4325,7 @@ function drawCaveWorld() {
     drawResources();
     drawPopulation();
     drawBuildingPanel();
+    drawBuildingMessage(); // Рисуем центрированное сообщение о строительстве
     drawReproductionHousePanel();
     drawWarriorCampPanel();
     drawBonfirePanel();
