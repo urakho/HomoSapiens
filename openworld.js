@@ -2447,32 +2447,29 @@ function drawBuildingPanel() {
 function drawBuildingMessage() {
     if (!buildingMode || !buildingType) return;
     
-    // Не показываем сообщения на мобильных устройствах
-    const isMobile = showMobileControls || window.innerWidth <= 800;
-    if (isMobile) return;
-    
+    // Показываем сообщения и на мобильных устройствах
     let message = '';
     let color = '#fff';
     
     switch(buildingType) {
         case 'house':
-            message = 'Кликните на карту, чтобы построить жилище (+5 места)';
+            message = window.innerWidth <= 800 ? 'Тапните для постройки жилища' : 'Кликните на карту, чтобы построить жилище (+5 места)';
             color = '#f39c12';
             break;
         case 'reproduction_house':
-            message = 'Кликните на карту, чтобы построить хижину рода (разрешает найм)';
+            message = window.innerWidth <= 800 ? 'Тапните для постройки хижины рода' : 'Кликните на карту, чтобы построить хижину рода (разрешает найм)';
             color = '#e74c3c';
             break;
         case 'warrior_camp':
-            message = 'Кликните на карту, чтобы построить лагерь воинов (найм воинов)';
+            message = window.innerWidth <= 800 ? 'Тапните для постройки лагеря воинов' : 'Кликните на карту, чтобы построить лагерь воинов (найм воинов)';
             color = '#8e44ad';
             break;
         case 'bonfire':
-            message = 'Кликните на карту, чтобы построить костер (найм факельщиков)';
+            message = window.innerWidth <= 800 ? 'Тапните для постройки костра' : 'Кликните на карту, чтобы построить костер (найм факельщиков)';
             color = '#e67e22';
             break;
         case 'farm':
-            message = 'Кликните на карту, чтобы построить ферму (производство еды)';
+            message = window.innerWidth <= 800 ? 'Тапните для постройки фермы' : 'Кликните на карту, чтобы построить ферму (производство еды)';
             color = '#27ae60';
             break;
     }
@@ -2492,7 +2489,8 @@ function drawBuildingMessage() {
         // Убрали рамку - оставляем только фон и текст
         
         // Центрированный текст
-        ctx.font = '16px Arial';
+        const fontSize = window.innerWidth <= 800 ? '14px' : '16px';
+        ctx.font = `${fontSize} Arial`;
         ctx.fillStyle = color;
         ctx.textAlign = 'center';
         ctx.textBaseline = 'middle';
@@ -2616,6 +2614,13 @@ function drawBuildingModal() {
             }
         }
     }
+    
+    // Общая рамка вокруг всей таблицы зданий
+    const tableWidth = 2 * cellSize + cellSpacing;
+    const tableHeight = 4 * (cellSize * 0.7 + cellSpacing) - cellSpacing;
+    ctx.strokeStyle = '#fff';
+    ctx.lineWidth = 2;
+    ctx.strokeRect(gridStartX, gridStartY, tableWidth, tableHeight);
     
     // Кнопка закрытия
     const closeButtonX = modalX + modalWidth - 40;
@@ -7942,7 +7947,7 @@ function handleGameTouch(x, y) {
         if (window.buildingModalButtons) {
             for (const btn of window.buildingModalButtons) {
                 if (x >= btn.x && x <= btn.x + btn.width && 
-                    y >= btn.y && y <= btn.y + btn.height) {
+                    y >= btn.y && y <= btn.y + btn.height && btn.canBuild) {
                     // Активируем режим строительства выбранного здания
                     buildingMode = true;
                     buildingType = btn.type;
@@ -7985,6 +7990,173 @@ function handleGameTouch(x, y) {
     });
     
     if (clickedOnUI) return;
+    
+    // ===== ЛОГИКА СТРОИТЕЛЬСТВА =====
+    // Если в режиме строительства, строим здание
+    const hasBuilders = people.some(p => p.type === 'builder' || p.type === 'civilian');
+    if (buildingMode && buildingType && hasBuilders) {
+        if (buildingType === 'house' && resources.wood >= 10) {
+            // Проверяем, не слишком ли близко к другим зданиям
+            let canBuild = true;
+            buildings.forEach(building => {
+                const distance = Math.sqrt((worldX - building.x) ** 2 + (worldY - building.y) ** 2);
+                if (distance < 100) {
+                    canBuild = false;
+                }
+            });
+            
+            // Проверяем расстояние до шалаша
+            const distanceToHut = Math.sqrt((worldX - 400) ** 2 + (worldY - 350) ** 2);
+            if (distanceToHut < 100) {
+                canBuild = false;
+            }
+            
+            if (canBuild) {
+                // Строим жилище
+                buildings.push({
+                    x: worldX,
+                    y: worldY,
+                    type: 'house'
+                });
+                resources.wood -= 10;
+                
+                // Увеличиваем максимальное население на 5 за каждый шалаш
+                maxPopulation += 5;
+                
+                buildingMode = false;
+                buildingType = null;
+                console.log('Touch - Построено жилище');
+                return;
+            }
+        } else if (buildingType === 'reproduction_house' && resources.wood >= 15 && resources.stone >= 5) {
+            // Проверяем, не слишком ли близко к другим зданиям
+            let canBuild = true;
+            buildings.forEach(building => {
+                const distance = Math.sqrt((worldX - building.x) ** 2 + (worldY - building.y) ** 2);
+                if (distance < 100) {
+                    canBuild = false;
+                }
+            });
+            
+            // Проверяем расстояние до шалаша
+            const distanceToHut = Math.sqrt((worldX - 400) ** 2 + (worldY - 350) ** 2);
+            if (distanceToHut < 100) {
+                canBuild = false;
+            }
+            
+            if (canBuild) {
+                // Строим хижину рода
+                buildings.push({
+                    x: worldX,
+                    y: worldY,
+                    type: 'reproduction_house'
+                });
+                resources.wood -= 15;
+                resources.stone -= 5;
+                
+                buildingMode = false;
+                buildingType = null;
+                console.log('Touch - Построена хижина рода');
+                return;
+            }
+        } else if (buildingType === 'warrior_camp' && resources.wood >= 20 && resources.stone >= 10) {
+            // Проверяем, не слишком ли близко к другим зданиям
+            let canBuild = true;
+            buildings.forEach(building => {
+                const distance = Math.sqrt((worldX - building.x) ** 2 + (worldY - building.y) ** 2);
+                if (distance < 100) {
+                    canBuild = false;
+                }
+            });
+            
+            // Проверяем расстояние до шалаша
+            const distanceToHut = Math.sqrt((worldX - 400) ** 2 + (worldY - 350) ** 2);
+            if (distanceToHut < 100) {
+                canBuild = false;
+            }
+            
+            if (canBuild) {
+                // Строим лагерь воинов
+                buildings.push({
+                    x: worldX,
+                    y: worldY,
+                    type: 'warrior_camp'
+                });
+                resources.wood -= 20;
+                resources.stone -= 10;
+                
+                buildingMode = false;
+                buildingType = null;
+                console.log('Touch - Построен лагерь воинов');
+                return;
+            }
+        } else if (buildingType === 'bonfire' && resources.wood >= 5) {
+            // Проверяем, не слишком ли близко к другим зданиям
+            let canBuild = true;
+            buildings.forEach(building => {
+                const distance = Math.sqrt((worldX - building.x) ** 2 + (worldY - building.y) ** 2);
+                if (distance < 100) {
+                    canBuild = false;
+                }
+            });
+            
+            // Проверяем расстояние до шалаша
+            const distanceToHut = Math.sqrt((worldX - 400) ** 2 + (worldY - 350) ** 2);
+            if (distanceToHut < 100) {
+                canBuild = false;
+            }
+            
+            if (canBuild) {
+                // Строим костер
+                buildings.push({
+                    x: worldX,
+                    y: worldY,
+                    type: 'bonfire'
+                });
+                resources.wood -= 5;
+                
+                buildingMode = false;
+                buildingType = null;
+                console.log('Touch - Построен костер');
+                return;
+            }
+        } else if (buildingType === 'farm' && resources.wood >= 15 && resources.stone >= 5) {
+            // Проверяем, не слишком ли близко к другим зданиям
+            let canBuild = true;
+            buildings.forEach(building => {
+                const distance = Math.sqrt((worldX - building.x) ** 2 + (worldY - building.y) ** 2);
+                if (distance < 100) {
+                    canBuild = false;
+                }
+            });
+            
+            // Проверяем расстояние до шалаша
+            const distanceToHut = Math.sqrt((worldX - 400) ** 2 + (worldY - 350) ** 2);
+            if (distanceToHut < 100) {
+                canBuild = false;
+            }
+            
+            if (canBuild) {
+                // Строим ферму
+                buildings.push({
+                    x: worldX,
+                    y: worldY,
+                    type: 'farm'
+                });
+                resources.wood -= 15;
+                resources.stone -= 5;
+                
+                buildingMode = false;
+                buildingType = null;
+                console.log('Touch - Построена ферма');
+                return;
+            }
+        }
+        
+        // Если в режиме строительства но не удалось построить - просто возвращаемся
+        console.log('Touch - Не удалось построить:', buildingType, 'Ресурсы:', resources);
+        return;
+    }
     
     // Проверяем выбор человечка на карте
     let found = false;
