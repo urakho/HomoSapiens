@@ -2676,6 +2676,7 @@ function drawReproductionHousePanel() {
         window.reproductionHouseHireButton = null;
         window.reproductionHouseHunterButton = null;
         window.reproductionHouseTechButton = null;
+        window.reproductionHouseCloseButton = null;
         return;
     }
     
@@ -2824,39 +2825,34 @@ function drawReproductionHousePanel() {
         window.reproductionHouseTechButton = null;
     }
     
-    // Кнопка закрытия для мобильных устройств
-    const isMobile = showMobileControls || window.innerWidth <= 800;
-    if (isMobile) {
-        const closeButtonSize = 30;
-        const closeButtonX = panelX + panelWidth - closeButtonSize - 5;
-        const closeButtonY = panelY + 5;
-        
-        // Красный квадрат
-        ctx.fillStyle = '#e74c3c';
-        ctx.fillRect(closeButtonX, closeButtonY, closeButtonSize, closeButtonSize);
-        
-        // Белая рамка
-        ctx.strokeStyle = '#fff';
-        ctx.lineWidth = 2;
-        ctx.strokeRect(closeButtonX, closeButtonY, closeButtonSize, closeButtonSize);
-        
-        // Белый крестик
-        ctx.font = 'bold 20px Arial';
-        ctx.fillStyle = '#fff';
-        ctx.textAlign = 'center';
-        ctx.textBaseline = 'middle';
-        ctx.fillText('×', closeButtonX + closeButtonSize/2, closeButtonY + closeButtonSize/2);
-        
-        // Сохраняем координаты для обработки кликов
-        window.reproductionHouseCloseButton = {
-            x: closeButtonX,
-            y: closeButtonY,
-            width: closeButtonSize,
-            height: closeButtonSize
-        };
-    } else {
-        window.reproductionHouseCloseButton = null;
-    }
+    // Кнопка закрытия (всегда показываем)
+    const closeButtonSize = 30;
+    const closeButtonX = panelX + panelWidth - closeButtonSize - 5;
+    const closeButtonY = panelY + 5;
+    
+    // Красный квадрат
+    ctx.fillStyle = '#e74c3c';
+    ctx.fillRect(closeButtonX, closeButtonY, closeButtonSize, closeButtonSize);
+    
+    // Белая рамка
+    ctx.strokeStyle = '#fff';
+    ctx.lineWidth = 2;
+    ctx.strokeRect(closeButtonX, closeButtonY, closeButtonSize, closeButtonSize);
+    
+    // Белый крестик
+    ctx.font = 'bold 20px Arial';
+    ctx.fillStyle = '#fff';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText('×', closeButtonX + closeButtonSize/2, closeButtonY + closeButtonSize/2);
+    
+    // Сохраняем координаты для обработки кликов
+    window.reproductionHouseCloseButton = {
+        x: closeButtonX,
+        y: closeButtonY,
+        width: closeButtonSize,
+        height: closeButtonSize
+    };
     
     ctx.restore();
 }
@@ -2866,6 +2862,7 @@ function drawWarriorCampPanel() {
         // Очищаем кнопки если панель не активна
         window.warriorCampHireButton = null;
         window.warriorCampHireSpearmanButton = null;
+        window.warriorCampCloseButton = null;
         return;
     }
     
@@ -2995,39 +2992,34 @@ function drawWarriorCampPanel() {
         canHire: canHireSpearman
     };
     
-    // Кнопка закрытия для мобильных устройств
-    const isMobile = showMobileControls || window.innerWidth <= 800;
-    if (isMobile) {
-        const closeButtonSize = 30;
-        const closeButtonX = panelX + panelWidth - closeButtonSize - 5;
-        const closeButtonY = panelY + 5;
-        
-        // Красный квадрат
-        ctx.fillStyle = '#e74c3c';
-        ctx.fillRect(closeButtonX, closeButtonY, closeButtonSize, closeButtonSize);
-        
-        // Белая рамка
-        ctx.strokeStyle = '#fff';
-        ctx.lineWidth = 2;
-        ctx.strokeRect(closeButtonX, closeButtonY, closeButtonSize, closeButtonSize);
-        
-        // Белый крестик
-        ctx.font = 'bold 20px Arial';
-        ctx.fillStyle = '#fff';
-        ctx.textAlign = 'center';
-        ctx.textBaseline = 'middle';
-        ctx.fillText('×', closeButtonX + closeButtonSize/2, closeButtonY + closeButtonSize/2);
-        
-        // Сохраняем координаты для обработки кликов
-        window.warriorCampCloseButton = {
-            x: closeButtonX,
-            y: closeButtonY,
-            width: closeButtonSize,
-            height: closeButtonSize
-        };
-    } else {
-        window.warriorCampCloseButton = null;
-    }
+    // Кнопка закрытия (всегда показываем)
+    const closeButtonSize = 30;
+    const closeButtonX = panelX + panelWidth - closeButtonSize - 5;
+    const closeButtonY = panelY + 5;
+    
+    // Красный квадрат
+    ctx.fillStyle = '#e74c3c';
+    ctx.fillRect(closeButtonX, closeButtonY, closeButtonSize, closeButtonSize);
+    
+    // Белая рамка
+    ctx.strokeStyle = '#fff';
+    ctx.lineWidth = 2;
+    ctx.strokeRect(closeButtonX, closeButtonY, closeButtonSize, closeButtonSize);
+    
+    // Белый крестик
+    ctx.font = 'bold 20px Arial';
+    ctx.fillStyle = '#fff';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText('×', closeButtonX + closeButtonSize/2, closeButtonY + closeButtonSize/2);
+    
+    // Сохраняем координаты для обработки кликов
+    window.warriorCampCloseButton = {
+        x: closeButtonX,
+        y: closeButtonY,
+        width: closeButtonSize,
+        height: closeButtonSize
+    };
     
     ctx.restore();
 }
@@ -3036,6 +3028,7 @@ function drawBonfirePanel() {
     if (!selectedBuilding || selectedBuilding.type !== 'bonfire') {
         // Очищаем кнопки если панель не активна
         window.bonfireHireTorchbearerButton = null;
+        window.bonfireCloseButton = null;
         return;
     }
     
@@ -3110,39 +3103,34 @@ function drawBonfirePanel() {
         canHire: canHire
     };
     
-    // Кнопка закрытия для мобильных устройств
-    const isMobile = showMobileControls || window.innerWidth <= 800;
-    if (isMobile) {
-        const closeButtonSize = 30;
-        const closeButtonX = panelX + panelWidth - closeButtonSize - 5;
-        const closeButtonY = panelY + 5;
-        
-        // Красный квадрат
-        ctx.fillStyle = '#e74c3c';
-        ctx.fillRect(closeButtonX, closeButtonY, closeButtonSize, closeButtonSize);
-        
-        // Белая рамка
-        ctx.strokeStyle = '#fff';
-        ctx.lineWidth = 2;
-        ctx.strokeRect(closeButtonX, closeButtonY, closeButtonSize, closeButtonSize);
-        
-        // Белый крестик
-        ctx.font = 'bold 20px Arial';
-        ctx.fillStyle = '#fff';
-        ctx.textAlign = 'center';
-        ctx.textBaseline = 'middle';
-        ctx.fillText('×', closeButtonX + closeButtonSize/2, closeButtonY + closeButtonSize/2);
-        
-        // Сохраняем координаты для обработки кликов
-        window.bonfireCloseButton = {
-            x: closeButtonX,
-            y: closeButtonY,
-            width: closeButtonSize,
-            height: closeButtonSize
-        };
-    } else {
-        window.bonfireCloseButton = null;
-    }
+    // Кнопка закрытия (всегда показываем)
+    const closeButtonSize = 30;
+    const closeButtonX = panelX + panelWidth - closeButtonSize - 5;
+    const closeButtonY = panelY + 5;
+    
+    // Красный квадрат
+    ctx.fillStyle = '#e74c3c';
+    ctx.fillRect(closeButtonX, closeButtonY, closeButtonSize, closeButtonSize);
+    
+    // Белая рамка
+    ctx.strokeStyle = '#fff';
+    ctx.lineWidth = 2;
+    ctx.strokeRect(closeButtonX, closeButtonY, closeButtonSize, closeButtonSize);
+    
+    // Белый крестик
+    ctx.font = 'bold 20px Arial';
+    ctx.fillStyle = '#fff';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText('×', closeButtonX + closeButtonSize/2, closeButtonY + closeButtonSize/2);
+    
+    // Сохраняем координаты для обработки кликов
+    window.bonfireCloseButton = {
+        x: closeButtonX,
+        y: closeButtonY,
+        width: closeButtonSize,
+        height: closeButtonSize
+    };
     
     ctx.restore();
 }
