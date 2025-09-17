@@ -472,8 +472,8 @@ const eras = {
         buildings: ['house', 'reproduction_house', 'warrior_camp']
     },
     bone_age: {
-        name: 'Костяная эпоха',
-        description: 'Эпоха костяных инструментов и огня',
+        name: 'Новокаменный век',
+        description: 'Эпоха развитого земледелия и скотоводства',
         unlocked: false,
         requirement: { food: 200 },
         buildings: ['house', 'reproduction_house', 'warrior_camp', 'bonfire', 'farm']
@@ -2343,7 +2343,7 @@ function drawBuildingPanel() {
     ctx.fillStyle = canBuildWarriorCamp ? '#bdc3c7' : '#7f8c8d';
     ctx.fillText('20 дерева, 10 камня', warriorCampButtonX + buttonWidth/2, warriorCampButtonY + buttonHeight + 15);
     
-    // Кнопка костра (только в костяной эпохе)
+    // Кнопка костра (только в новокаменном веке)
     if (canBuildInCurrentEra('bonfire')) {
         const bonfireButtonX = isMobile ? 350 : 440; // Адаптивная позиция X
         const bonfireButtonY = panelY + (isMobile ? 30 : 40);
@@ -2381,7 +2381,7 @@ function drawBuildingPanel() {
         };
     }
     
-    // Кнопка фермы (только в костяной эпохе)
+    // Кнопка фермы (только в новокаменном веке)
     if (canBuildInCurrentEra('farm')) {
         const farmButtonX = isMobile ? 460 : 580; // Адаптивная позиция X
         const farmButtonY = panelY + (isMobile ? 30 : 40);
@@ -2516,9 +2516,9 @@ function drawBuildingModal() {
     ctx.fillStyle = 'rgba(0, 0, 0, 0.7)';
     ctx.fillRect(0, 0, canvas.width, canvas.height);
     
-    // Размеры модального окна
-    const modalWidth = Math.min(400, canvas.width - 40);
-    const modalHeight = Math.min(350, canvas.height - 80);
+    // Размеры модального окна - адаптированы для мобильных устройств
+    const modalWidth = Math.min(400, canvas.width - 20);  // Вернули ширину для 2 колонок
+    const modalHeight = Math.min(400, canvas.height - 60); // Увеличили высоту для 4 строк
     const modalX = (canvas.width - modalWidth) / 2;
     const modalY = (canvas.height - modalHeight) / 2;
     
@@ -2537,19 +2537,65 @@ function drawBuildingModal() {
     ctx.textAlign = 'center';
     ctx.fillText('Строительство', modalX + modalWidth/2, modalY + 30);
     
-    // Сетка зданий 2x4
-    const gridStartX = modalX + 20;
-    const gridStartY = modalY + 50;
-    const cellSize = (modalWidth - 60) / 2; // 2 колонки
-    const cellSpacing = 10;
+    // Сетка зданий 2x4 (вертикальная)
+    const gridStartX = modalX + 20;  
+    const gridStartY = modalY + 60;
+    const cellSpacing = 8;           
+    const availableWidth = modalWidth - 40; // Отступы слева и справа
+    const availableHeight = modalHeight - 120; // Отступы сверху и снизу (заголовок + кнопка)
+    
+    // Рассчитываем размер ячейки исходя из доступного места
+    const cellWidth = (availableWidth - cellSpacing) / 2; // 2 колонки
+    const cellHeight = (availableHeight - 3 * cellSpacing) / 4; // 4 строки
+    const cellSize = Math.min(cellWidth, cellHeight * 1.4); // Ограничиваем размер
     
     // Определяем доступные здания в зависимости от эпохи
     const buildings = [
-        { type: 'house', icon: '🏠', name: 'Жилище', cost: '10 дерева', canBuild: resources.wood >= 10 },
-        { type: 'reproduction_house', icon: '🏘️', name: 'Хижина рода', cost: '15 дерева, 5 камня', canBuild: resources.wood >= 15 && resources.stone >= 5 },
-        { type: 'warrior_camp', icon: '⚔️', name: 'Лагерь воинов', cost: '20 дерева, 10 камня', canBuild: resources.wood >= 20 && resources.stone >= 10 },
-        { type: 'bonfire', icon: '🔥', name: 'Костер', cost: '10 дерева, 5 камня', canBuild: canBuildInCurrentEra('bonfire') && resources.wood >= 10 && resources.stone >= 5 },
-        { type: 'farm', icon: '🌾', name: 'Ферма', cost: '10 дерева', canBuild: canBuildInCurrentEra('farm') && resources.wood >= 10 },
+        { 
+            type: 'house', 
+            icon: '🏠', 
+            name: 'Жилище', 
+            cost: '10 дерева', 
+            canBuildEra: true,
+            canBuildResources: resources.wood >= 10,
+            canBuild: resources.wood >= 10 
+        },
+        { 
+            type: 'reproduction_house', 
+            icon: '🏘️', 
+            name: 'Хижина рода', 
+            cost: '15 дерева, 5 камня', 
+            canBuildEra: true,
+            canBuildResources: resources.wood >= 15 && resources.stone >= 5,
+            canBuild: resources.wood >= 15 && resources.stone >= 5 
+        },
+        { 
+            type: 'warrior_camp', 
+            icon: '⚔️', 
+            name: 'Лагерь воинов', 
+            cost: '20 дерева, 10 камня', 
+            canBuildEra: true,
+            canBuildResources: resources.wood >= 20 && resources.stone >= 10,
+            canBuild: resources.wood >= 20 && resources.stone >= 10 
+        },
+        { 
+            type: 'bonfire', 
+            icon: '🔥', 
+            name: 'Костер', 
+            cost: '10 дерева, 5 камня', 
+            canBuildEra: canBuildInCurrentEra('bonfire'),
+            canBuildResources: resources.wood >= 10 && resources.stone >= 5,
+            canBuild: canBuildInCurrentEra('bonfire') && resources.wood >= 10 && resources.stone >= 5 
+        },
+        { 
+            type: 'farm', 
+            icon: '🌾', 
+            name: 'Ферма', 
+            cost: '10 дерева', 
+            canBuildEra: canBuildInCurrentEra('farm'),
+            canBuildResources: resources.wood >= 10,
+            canBuild: canBuildInCurrentEra('farm') && resources.wood >= 10 
+        },
         null, // Пустая ячейка
         null, // Пустая ячейка
         null  // Пустая ячейка
@@ -2564,66 +2610,93 @@ function drawBuildingModal() {
             const index = row * 2 + col;
             const building = buildings[index];
             
-            const cellX = gridStartX + col * (cellSize + cellSpacing);
-            const cellY = gridStartY + row * (cellSize * 0.7 + cellSpacing);
-            const cellWidth = cellSize;
-            const cellHeight = cellSize * 0.7;
+            const cellX = gridStartX + col * (cellWidth + cellSpacing);
+            const cellY = gridStartY + row * (cellHeight + cellSpacing);
+            const cellW = cellWidth;
+            const cellH = cellHeight;
             
             if (building) {
+                // Определяем тип недоступности
+                const isLockedByEra = !building.canBuildEra;
+                const isLockedByResources = building.canBuildEra && !building.canBuildResources;
+                const isAvailable = building.canBuild;
+                
                 // Фон ячейки
-                ctx.fillStyle = building.canBuild ? '#34495e' : '#7f8c8d';
-                ctx.fillRect(cellX, cellY, cellWidth, cellHeight);
+                if (isLockedByEra) {
+                    ctx.fillStyle = '#2c2c2c'; // Черный фон для заблокированных эпохой
+                } else if (isLockedByResources) {
+                    ctx.fillStyle = '#c0c0c0'; // Серый фон для недостатка ресурсов
+                } else {
+                    ctx.fillStyle = '#e8e8e8'; // Светлый фон для доступных
+                }
+                ctx.fillRect(cellX, cellY, cellW, cellH);
                 
                 // Рамка ячейки
-                ctx.strokeStyle = building.canBuild ? '#fff' : '#95a5a6';
+                ctx.strokeStyle = isAvailable ? '#333' : '#666';
                 ctx.lineWidth = 1;
-                ctx.strokeRect(cellX, cellY, cellWidth, cellHeight);
+                ctx.strokeRect(cellX, cellY, cellW, cellH);
                 
-                // Иконка здания
-                ctx.font = '30px Arial';
-                ctx.fillStyle = building.canBuild ? '#fff' : '#95a5a6';
-                ctx.textAlign = 'center';
-                ctx.fillText(building.icon, cellX + cellWidth/2, cellY + 30);
-                
-                // Название здания
-                ctx.font = '12px Arial';
-                ctx.fillText(building.name, cellX + cellWidth/2, cellY + 50);
-                
-                // Стоимость
-                ctx.font = '10px Arial';
-                ctx.fillStyle = building.canBuild ? '#bdc3c7' : '#7f8c8d';
-                ctx.fillText(building.cost, cellX + cellWidth/2, cellY + 65);
+                if (isLockedByEra) {
+                    // Для заблокированных эпохой - показываем замок
+                    ctx.font = `${Math.min(20, cellW * 0.3)}px Arial`;
+                    ctx.fillStyle = '#888';
+                    ctx.textAlign = 'center';
+                    ctx.fillText('🔒', cellX + cellW/2, cellY + cellH * 0.4);
+                    
+                    // Название здания серым цветом
+                    ctx.font = `${Math.min(8, cellW * 0.11)}px Arial`;
+                    ctx.fillStyle = '#888';
+                    ctx.fillText(building.name, cellX + cellW/2, cellY + cellH * 0.7);
+                } else {
+                    // Обычное отображение для доступных или недоступных только по ресурсам
+                    
+                    // Иконка здания
+                    ctx.font = `${Math.min(16, cellW * 0.25)}px Arial`;
+                    ctx.fillStyle = isAvailable ? '#000' : '#666';
+                    ctx.textAlign = 'center';
+                    ctx.fillText(building.icon, cellX + cellW/2, cellY + cellH * 0.25);
+                    
+                    // Название здания
+                    ctx.font = `${Math.min(9, cellW * 0.12)}px Arial`;
+                    ctx.fillStyle = isAvailable ? '#000' : '#666';
+                    ctx.fillText(building.name, cellX + cellW/2, cellY + cellH * 0.5);
+                    
+                    // Стоимость
+                    ctx.font = `${Math.min(7, cellW * 0.1)}px Arial`;
+                    ctx.fillStyle = isAvailable ? '#333' : '#666';
+                    ctx.fillText(building.cost, cellX + cellW/2, cellY + cellH * 0.75);
+                }
                 
                 // Сохраняем координаты для обработки кликов
                 window.buildingModalButtons.push({
                     type: building.type,
                     x: cellX,
                     y: cellY,
-                    width: cellWidth,
-                    height: cellHeight,
+                    width: cellW,
+                    height: cellH,
                     canBuild: building.canBuild
                 });
             } else {
                 // Пустая ячейка
-                ctx.fillStyle = '#2c3e50';
-                ctx.fillRect(cellX, cellY, cellWidth, cellHeight);
+                ctx.fillStyle = '#f0f0f0';
+                ctx.fillRect(cellX, cellY, cellW, cellH);
                 
-                ctx.strokeStyle = '#34495e';
+                ctx.strokeStyle = '#ccc';
                 ctx.lineWidth = 1;
-                ctx.strokeRect(cellX, cellY, cellWidth, cellHeight);
+                ctx.strokeRect(cellX, cellY, cellW, cellH);
                 
                 // Знак пустой ячейки
-                ctx.font = '20px Arial';
-                ctx.fillStyle = '#7f8c8d';
+                ctx.font = `${Math.min(12, cellW * 0.2)}px Arial`;
+                ctx.fillStyle = '#999';
                 ctx.textAlign = 'center';
-                ctx.fillText('—', cellX + cellWidth/2, cellY + cellHeight/2 + 5);
+                ctx.fillText('—', cellX + cellW/2, cellY + cellH/2 + 3);
             }
         }
     }
     
     // Общая рамка вокруг всей таблицы зданий (2 столбца x 4 строки)
-    const tableWidth = 2 * cellSize + cellSpacing;
-    const tableHeight = 4 * cellSize * 0.7 + 3 * cellSpacing; // 4 ячейки + 3 отступа между ними
+    const tableWidth = 2 * cellWidth + cellSpacing; // размер двух ячеек + отступ между ними
+    const tableHeight = 4 * cellHeight + 3 * cellSpacing; // размер четырех ячеек + отступы между ними
     ctx.strokeStyle = '#fff';
     ctx.lineWidth = 2;
     ctx.strokeRect(gridStartX, gridStartY, tableWidth, tableHeight);
@@ -2783,7 +2856,7 @@ function drawReproductionHousePanel() {
         canHire: canHireHunter
     };
     
-    // Кнопка технологии "Костяные инструменты"
+    // Кнопка технологии "Неолитическая революция"
     if (currentEra === 'stone_age') {
         const techButtonX = panelX + 40;
         const techButtonY = panelY + 160;
@@ -2809,8 +2882,8 @@ function drawReproductionHousePanel() {
         // Текст кнопки технологии
         ctx.font = '9px Arial';
         ctx.fillStyle = canResearchTech ? '#fff' : '#000';
-        ctx.fillText('Костяные', techButtonX + techButtonWidth/2, techButtonY + 30);
-        ctx.fillText('инструменты', techButtonX + techButtonWidth/2, techButtonY + 40);
+        ctx.fillText('Неолитическая', techButtonX + techButtonWidth/2, techButtonY + 30);
+        ctx.fillText('революция', techButtonX + techButtonWidth/2, techButtonY + 40);
         ctx.fillText('(200 пищи)', techButtonX + techButtonWidth/2, techButtonY + 48);
         
         // Сохраняем координаты для кликов
@@ -2939,7 +3012,7 @@ function drawWarriorCampPanel() {
     // Кнопка найма метателя копья
     const buttonX2 = panelX + 160;
     
-    // Проверяем возможность найма метателя копья (только в костяном веке)
+    // Проверяем возможность найма метателя копья (только в новокаменном веке)
     const canHireSpearman = people.length < maxPopulation && resources.wood >= 15 && resources.stone >= 5 && currentEra === 'bone_age';
     
     // Фон кнопки метателя копья
@@ -2980,7 +3053,7 @@ function drawWarriorCampPanel() {
     if (currentEra === 'bone_age') {
         ctx.fillText('(15 дерева, 5 камня)', buttonX2 + buttonWidth/2, buttonY + 42);
     } else {
-        ctx.fillText('(нужен костяной век)', buttonX2 + buttonWidth/2, buttonY + 42);
+        ctx.fillText('(нужен новокаменный век)', buttonX2 + buttonWidth/2, buttonY + 42);
     }
     
     // Сохраняем координаты для кликов
@@ -4631,7 +4704,7 @@ function drawCaveWorld() {
 // Система эпох
 function checkEraUnlocks() {
     // Автоматическое открытие эпох отключено - теперь открывается через технологии
-    // Костяная эпоха открывается через технологию "Костяные инструменты" за 200 пищи в жилище рода
+    // Новокаменный век открывается через технологию "Неолитическая революция" за 200 пищи в жилище рода
 }
 
 function showEraNotification(eraKey) {
@@ -4681,7 +4754,7 @@ function drawEraInfo() {
     ctx.fillStyle = '#fff';
     if (currentEra === 'stone_age') {
         const progress = Math.min(100, (totalFoodCollected / 200) * 100);
-        ctx.fillText(`Прогресс к Костяной эпохе:`, canvas.width - 290, 85);
+        ctx.fillText(`Прогресс к Новокаменному веку:`, canvas.width - 290, 85);
         
         // Прогресс-бар
         const barWidth = 200;
@@ -6158,14 +6231,14 @@ canvas.addEventListener('mousedown', function(e) {
             
             // Дополнительная проверка ресурсов перед изучением технологии
             if (resources.food >= 200 && currentEra === 'stone_age') {
-                // Тратим пищу и открываем костяную эпоху
+                // Тратим пищу и открываем новокаменный век
                 resources.food -= 200;
                 currentEra = 'bone_age';
                 eras.bone_age.unlocked = true;
                 
                 // Добавляем уведомление об открытии новой эпохи
                 eraNotifications.push({
-                    message: `🦴 Костяная эпоха открыта!`,
+                    message: `🌾 Новокаменный век открыт!`,
                     timer: 3000,
                     y: canvas.height / 2 - 60
                 });
