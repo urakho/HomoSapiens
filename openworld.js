@@ -5919,7 +5919,7 @@ canvas.addEventListener('mousedown', function(e) {
         if (screenX >= btn.x && screenX <= btn.x + btn.width && 
             screenY >= btn.y && screenY <= btn.y + btn.height) {
             console.log('Клик по кнопке ОТКРЫТЬ! Открываем модальное окно');
-            isBuildingModalVisible = true;
+            showBuildingModal = true;
             return;
         }
     }
@@ -7906,6 +7906,57 @@ function handleTouchMove(e) {
 }
 
 function handleGameTouch(x, y) {
+    // ===== ПРОВЕРКА КЛИКОВ ПО UI ЭЛЕМЕНТАМ (ПРИОРИТЕТ) =====
+    
+    // Проверяем клик по кнопке "ОТКРЫТЬ" (для мобильных) - высший приоритет
+    if (window.openBuildingModalButton) {
+        const btn = window.openBuildingModalButton;
+        console.log('Touch - Проверяем клик по кнопке ОТКРЫТЬ:', {
+            x, y, 
+            btnX: btn.x, btnY: btn.y, 
+            btnWidth: btn.width, btnHeight: btn.height,
+            inX: x >= btn.x && x <= btn.x + btn.width,
+            inY: y >= btn.y && y <= btn.y + btn.height
+        });
+        if (x >= btn.x && x <= btn.x + btn.width && 
+            y >= btn.y && y <= btn.y + btn.height) {
+            console.log('Touch - Клик по кнопке ОТКРЫТЬ! Открываем модальное окно');
+            showBuildingModal = true;
+            return;
+        }
+    }
+    
+    // Проверяем клики по модальному окну зданий
+    if (showBuildingModal) {
+        // Проверяем клик на кнопку закрытия модального окна
+        if (window.buildingModalCloseButton) {
+            const btn = window.buildingModalCloseButton;
+            if (x >= btn.x && x <= btn.x + btn.width && 
+                y >= btn.y && y <= btn.y + btn.height) {
+                showBuildingModal = false;
+                return;
+            }
+        }
+        
+        // Проверяем клики на здания в модальном окне
+        if (window.buildingModalButtons) {
+            for (const btn of window.buildingModalButtons) {
+                if (x >= btn.x && x <= btn.x + btn.width && 
+                    y >= btn.y && y <= btn.y + btn.height) {
+                    // Активируем режим строительства выбранного здания
+                    buildingMode = true;
+                    buildingType = btn.type;
+                    showBuildingModal = false; // Закрываем модальное окно
+                    console.log('Touch - Выбрано здание для строительства:', btn.type);
+                    return;
+                }
+            }
+        }
+        
+        // Если клик был внутри модального окна, не обрабатываем дальше
+        return;
+    }
+    
     // Эта функция обрабатывает касания игрового поля как клики мышью
     // Конвертируем экранные координаты в мировые
     const worldX = (x - canvas.width/2) + camera.x + canvas.width/2;
