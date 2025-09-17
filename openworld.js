@@ -5904,6 +5904,38 @@ canvas.addEventListener('mousedown', function(e) {
         return;
     }
     
+    // ===== ПРОВЕРКА КЛИКОВ ПО UI ПАНЕЛЯМ (ПРИОРИТЕТ) =====
+    
+    // Проверяем клик по кнопке "ОТКРЫТЬ" (для мобильных) - высший приоритет
+    if (window.openBuildingModalButton) {
+        const btn = window.openBuildingModalButton;
+        console.log('Проверяем клик по кнопке ОТКРЫТЬ:', {
+            screenX, screenY, 
+            btnX: btn.x, btnY: btn.y, 
+            btnWidth: btn.width, btnHeight: btn.height,
+            inX: screenX >= btn.x && screenX <= btn.x + btn.width,
+            inY: screenY >= btn.y && screenY <= btn.y + btn.height
+        });
+        if (screenX >= btn.x && screenX <= btn.x + btn.width && 
+            screenY >= btn.y && screenY <= btn.y + btn.height) {
+            console.log('Клик по кнопке ОТКРЫТЬ! Открываем модальное окно');
+            isBuildingModalVisible = true;
+            return;
+        }
+    }
+    
+    // Проверяем клик по панели строительства (для предотвращения движения людей)
+    const isMobile = showMobileControls || window.innerWidth <= 800;
+    const panelHeight = isMobile ? 80 : 120;
+    const panelY = canvas.height - panelHeight;
+    
+    // Устанавливаем флаг клика по панели для последующей проверки
+    let clickedOnBuildingPanel = false;
+    if (screenY >= panelY && screenY <= canvas.height) {
+        clickedOnBuildingPanel = true;
+        console.log('Клик по панели строительства - блокируем движение');
+    }
+    
     // Проверяем клик на кнопку найма в интерфейсе хижины рода
     if (window.reproductionHouseHireButton) {
         const btn = window.reproductionHouseHireButton;
@@ -6406,23 +6438,6 @@ canvas.addEventListener('mousedown', function(e) {
         return;
     }
     
-    // Обработка клика по кнопке "ОТКРЫТЬ" (для мобильных)
-    if (window.openBuildingModalButton) {
-        const btn = window.openBuildingModalButton;
-        console.log('Проверяем клик по кнопке ОТКРЫТЬ:', {
-            screenX, screenY, 
-            btnX: btn.x, btnY: btn.y, 
-            btnWidth: btn.width, btnHeight: btn.height,
-            inX: screenX >= btn.x && screenX <= btn.x + btn.width,
-            inY: screenY >= btn.y && screenY <= btn.y + btn.height
-        });
-        if (screenX >= btn.x && screenX <= btn.x + btn.width && 
-            screenY >= btn.y && screenY <= btn.y + btn.height) {
-            console.log('Клик по кнопке ОТКРЫТЬ! Открываем модальное окно');
-            isBuildingModalVisible = true;
-            return;
-        }
-    }
     
     // Проверяем клики по панели населения
     let clickedOnUI = false;
@@ -6603,7 +6618,7 @@ canvas.addEventListener('mousedown', function(e) {
     }
 
     // Если не выбран человечек, а кто-то выбран — отправить их к точке
-    if (selectedPeople.length > 0) {
+    if (selectedPeople.length > 0 && !clickedOnBuildingPanel) {
         // Назначаем цель всем выделенным персонажам с небольшим разбросом
         selectedPeople.forEach((personIdx, i) => {
             if (people[personIdx]) {
