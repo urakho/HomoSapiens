@@ -8095,6 +8095,14 @@ function handleTouchStart(e) {
             }
         }
         
+        // Регистрируем касание для последующей обработки в handleTouchEnd
+        mobileControls.touches.set(touch.identifier, { 
+            type: 'tap', 
+            x: x, 
+            y: y,
+            startTime: Date.now()
+        });
+        
         // Если касание не попало на кнопку меню, обрабатываем как игровое взаимодействие
         handleGameTouch(x, y);
     }
@@ -8154,6 +8162,262 @@ function handleGameTouch(x, y) {
             y >= btn.y && y <= btn.y + btn.height) {
             selectedBuilding = null;
             console.log('Touch - Закрыта панель костра');
+            return;
+        }
+    }
+    
+    // ===== КНОПКИ ЗДАНИЙ ДЛЯ МОБИЛЬНЫХ УСТРОЙСТВ =====
+    
+    // Проверяем клик на кнопку найма в интерфейсе хижины рода
+    if (window.reproductionHouseHireButton) {
+        const btn = window.reproductionHouseHireButton;
+        if (x >= btn.x && x <= btn.x + btn.width && 
+            y >= btn.y && y <= btn.y + btn.height && btn.canHire) {
+            
+            // Дополнительная проверка ресурсов перед наймом
+            if (people.length < maxPopulation && resources.food >= 5) {
+                // Нанимаем нового человека рядом с хижиной рода
+                const startX = selectedBuilding.x + (Math.random() - 0.5) * 80;
+                const startY = selectedBuilding.y + (Math.random() - 0.5) * 80;
+                
+                people.push({
+                    x: startX,
+                    y: startY,
+                    target: null,
+                    hasAxe: false,
+                    choppingTimer: 0,
+                    currentBush: null,
+                    harvestingTreePos: null,
+                    harvestTimer: 0,
+                    statusDisplayTimer: 0,
+                    type: 'civilian',
+                    collectingStonePos: null,
+                    collectTimer: 0,
+                    lastAction: null,
+                    health: 100,
+                    maxHealth: 100,
+                    miningCave: null,
+                    miningTimer: 0
+                });
+                
+                resources.food -= 5;
+                selectedBuilding = null; // Закрываем панель после найма
+                console.log('Touch - Нанят гражданский');
+            }
+            return;
+        }
+    }
+    
+    // Проверяем клик на кнопку найма охотника в интерфейсе хижины рода
+    if (window.reproductionHouseHunterButton) {
+        const btn = window.reproductionHouseHunterButton;
+        if (x >= btn.x && x <= btn.x + btn.width && 
+            y >= btn.y && y <= btn.y + btn.height && btn.canHire) {
+            
+            // Дополнительная проверка ресурсов перед наймом охотника
+            if (people.length < maxPopulation && resources.wood >= 5 && resources.food >= 3) {
+                // Нанимаем нового охотника рядом с хижиной рода
+                const startX = selectedBuilding.x + (Math.random() - 0.5) * 80;
+                const startY = selectedBuilding.y + (Math.random() - 0.5) * 80;
+                
+                people.push({
+                    x: startX,
+                    y: startY,
+                    target: null,
+                    hasAxe: false,
+                    choppingTimer: 0,
+                    currentBush: null,
+                    harvestingTreePos: null,
+                    harvestTimer: 0,
+                    statusDisplayTimer: 0,
+                    type: 'hunter',
+                    collectingStonePos: null,
+                    collectTimer: 0,
+                    lastAction: null,
+                    health: 120,
+                    maxHealth: 120,
+                    combatTarget: null,
+                    attackCooldown: 0,
+                    detectionRange: 200,
+                    attackRange: 60,
+                    damage: 40,
+                    lastAttack: 0,
+                    speed: 3.0
+                });
+                
+                resources.wood -= 5;
+                resources.food -= 3;
+                selectedBuilding = null; // Закрываем панель после найма
+                console.log('Touch - Нанят охотник');
+            }
+            return;
+        }
+    }
+    
+    // Проверяем клик на кнопку технологии в интерфейсе хижины рода
+    if (window.reproductionHouseTechButton) {
+        const btn = window.reproductionHouseTechButton;
+        if (x >= btn.x && x <= btn.x + btn.width && 
+            y >= btn.y && y <= btn.y + btn.height && btn.canResearch) {
+            
+            // Дополнительная проверка ресурсов перед изучением технологии
+            if (resources.food >= 200 && currentEra === 'stone_age') {
+                // Тратим пищу и открываем новокаменный век
+                resources.food -= 200;
+                currentEra = 'bone_age';
+                eras.bone_age.unlocked = true;
+                
+                // Добавляем уведомление об открытии новой эпохи
+                eraNotifications.push({
+                    message: `🌾 Новокаменный век открыт!`,
+                    timer: 3000,
+                    y: canvas.height / 2 - 60
+                });
+                
+                selectedBuilding = null; // Закрываем панель после изучения
+                console.log('Touch - Изучена технология');
+            }
+            return;
+        }
+    }
+    
+    // Проверяем клик на кнопку найма в интерфейсе лагеря воинов
+    if (window.warriorCampHireButton) {
+        const btn = window.warriorCampHireButton;
+        if (x >= btn.x && x <= btn.x + btn.width && 
+            y >= btn.y && y <= btn.y + btn.height && btn.canHire) {
+            
+            // Дополнительная проверка ресурсов перед наймом
+            if (people.length < maxPopulation && resources.wood >= 10 && resources.food >= 3) {
+                // Нанимаем нового воина рядом с лагерем воинов
+                const startX = selectedBuilding.x + (Math.random() - 0.5) * 80;
+                const startY = selectedBuilding.y + (Math.random() - 0.5) * 80;
+                
+                people.push({
+                    x: startX,
+                    y: startY,
+                    target: null,
+                    hasAxe: false,
+                    choppingTimer: 0,
+                    currentBush: null,
+                    harvestingTreePos: null,
+                    harvestTimer: 0,
+                    statusDisplayTimer: 0,
+                    type: 'warrior',
+                    collectingStonePos: null,
+                    collectTimer: 0,
+                    lastAction: null,
+                    health: 120,
+                    maxHealth: 120,
+                    combatTarget: null,
+                    attackCooldown: 0,
+                    detectionRange: 220,
+                    attackRange: 45,
+                    damage: 35,
+                    lastAttack: 0,
+                    miningCave: null,
+                    miningTimer: 0
+                });
+                
+                resources.wood -= 10;
+                resources.food -= 3;
+                selectedBuilding = null; // Закрываем панель после найма
+                console.log('Touch - Нанят воин');
+            }
+            return;
+        }
+    }
+    
+    // Проверяем клик на кнопку найма метателя копья в интерфейсе лагеря воинов
+    if (window.warriorCampHireSpearmanButton) {
+        const btn = window.warriorCampHireSpearmanButton;
+        if (x >= btn.x && x <= btn.x + btn.width && 
+            y >= btn.y && y <= btn.y + btn.height && btn.canHire) {
+            
+            // Дополнительная проверка ресурсов перед наймом
+            if (people.length < maxPopulation && resources.wood >= 15 && resources.food >= 5 && currentEra === 'bone_age') {
+                // Нанимаем нового метателя копья рядом с лагерем воинов
+                const startX = selectedBuilding.x + (Math.random() - 0.5) * 80;
+                const startY = selectedBuilding.y + (Math.random() - 0.5) * 80;
+                
+                people.push({
+                    x: startX,
+                    y: startY,
+                    target: null,
+                    hasAxe: false,
+                    choppingTimer: 0,
+                    currentBush: null,
+                    harvestingTreePos: null,
+                    harvestTimer: 0,
+                    statusDisplayTimer: 0,
+                    type: 'spearman',
+                    collectingStonePos: null,
+                    collectTimer: 0,
+                    lastAction: null,
+                    health: 110,
+                    maxHealth: 110,
+                    combatTarget: null,
+                    attackCooldown: 0,
+                    detectionRange: 250,
+                    attackRange: 80,
+                    damage: 50,
+                    lastAttack: 0,
+                    miningCave: null,
+                    miningTimer: 0
+                });
+                
+                resources.wood -= 15;
+                resources.food -= 5;
+                selectedBuilding = null; // Закрываем панель после найма
+                console.log('Touch - Нанят метатель копья');
+            }
+            return;
+        }
+    }
+    
+    // Проверяем клик на кнопку найма факельщика в интерфейсе костра
+    if (window.bonfireHireTorchbearerButton) {
+        const btn = window.bonfireHireTorchbearerButton;
+        if (x >= btn.x && x <= btn.x + btn.width && 
+            y >= btn.y && y <= btn.y + btn.height && btn.canHire) {
+            
+            // Дополнительная проверка ресурсов перед наймом
+            if (people.length < maxPopulation && resources.wood >= 8 && resources.food >= 4 && currentEra === 'bone_age') {
+                // Нанимаем нового факельщика рядом с костром
+                const startX = selectedBuilding.x + (Math.random() - 0.5) * 80;
+                const startY = selectedBuilding.y + (Math.random() - 0.5) * 80;
+                
+                people.push({
+                    x: startX,
+                    y: startY,
+                    target: null,
+                    hasAxe: false,
+                    choppingTimer: 0,
+                    currentBush: null,
+                    harvestingTreePos: null,
+                    harvestTimer: 0,
+                    statusDisplayTimer: 0,
+                    type: 'torchbearer',
+                    collectingStonePos: null,
+                    collectTimer: 0,
+                    lastAction: null,
+                    health: 90,
+                    maxHealth: 90,
+                    combatTarget: null,
+                    attackCooldown: 0,
+                    detectionRange: 180,
+                    attackRange: 50,
+                    damage: 25,
+                    lastAttack: 0,
+                    miningCave: null,
+                    miningTimer: 0
+                });
+                
+                resources.wood -= 8;
+                resources.food -= 4;
+                selectedBuilding = null; // Закрываем панель после найма
+                console.log('Touch - Нанят факельщик');
+            }
             return;
         }
     }
@@ -8568,6 +8832,29 @@ function handleTouchEnd(e) {
         
         if (touchData && touchData.type === 'button') {
             mobileControls.buttons[touchData.name].pressed = false;
+            mobileControls.touches.delete(touch.identifier);
+        } else if (touchData && touchData.type === 'tap') {
+            // Обрабатываем тап как клик мыши для UI элементов
+            const rect = canvas.getBoundingClientRect();
+            const screenX = touch.clientX - rect.left;
+            const screenY = touch.clientY - rect.top;
+            
+            // Создаем синтетическое событие mousedown для обработки кликов по кнопкам зданий
+            const syntheticEvent = {
+                clientX: touch.clientX,
+                clientY: touch.clientY,
+                button: 0, // Левая кнопка мыши
+                preventDefault: () => {}
+            };
+            
+            // Вызываем обработчик mousedown напрямую
+            canvas.dispatchEvent(new MouseEvent('mousedown', {
+                clientX: touch.clientX,
+                clientY: touch.clientY,
+                button: 0,
+                bubbles: true
+            }));
+            
             mobileControls.touches.delete(touch.identifier);
         }
     }
