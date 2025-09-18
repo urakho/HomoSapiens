@@ -3213,7 +3213,10 @@ function drawPopulation() {
     const isMobile = showMobileControls;
     const panelWidth = isMobile ? 120 : 160; // Уменьшаем ширину для мобильных
     const itemHeight = isMobile ? 28 : 35; // Уменьшаем высоту элемента для мобильных
-    const panelHeight = people.length * itemHeight + (isMobile ? 50 : 60); // Меньший отступ для мобильных
+    const panelHeight = people.length * itemHeight + 
+        (isMobile ? 
+            (people.length > 0 ? (selectedPeople.length > 0 ? 65 : 53) : 50) : // Дополнительное место для кнопки на мобиле
+            60); // Меньший отступ для мобильных
     const panelX = canvas.width - panelWidth - 10;
     const panelY = 80;
     
@@ -3235,12 +3238,50 @@ function drawPopulation() {
         ctx.fillText(`Выделено: ${selectedPeople.length}`, panelX + panelWidth / 2, panelY + (isMobile ? 28 : 35));
     }
     
+    // Кнопка "Выделить всё" для мобильных устройств
+    if (isMobile && people.length > 0) {
+        const buttonY = panelY + (selectedPeople.length > 0 ? 40 : 28);
+        const buttonHeight = 12;
+        const buttonWidth = panelWidth - 20;
+        const buttonX = panelX + 10;
+        
+        // Фон кнопки
+        const allSelected = selectedPeople.length === people.length;
+        ctx.fillStyle = allSelected ? '#27ae60' : '#3498db';
+        ctx.fillRect(buttonX, buttonY, buttonWidth, buttonHeight);
+        
+        // Рамка кнопки
+        ctx.strokeStyle = '#fff';
+        ctx.lineWidth = 1;
+        ctx.strokeRect(buttonX, buttonY, buttonWidth, buttonHeight);
+        
+        // Текст кнопки
+        ctx.font = 'bold 8px Arial';
+        ctx.fillStyle = '#fff';
+        ctx.textAlign = 'center';
+        ctx.fillText(allSelected ? 'СНЯТЬ ВЫДЕЛЕНИЕ' : 'ВЫДЕЛИТЬ ВСЁ', buttonX + buttonWidth/2, buttonY + 8);
+        
+        // Сохраняем координаты кнопки для обработки тапов
+        window.selectAllButton = {
+            x: buttonX,
+            y: buttonY,
+            width: buttonWidth,
+            height: buttonHeight,
+            allSelected: allSelected
+        };
+    } else {
+        window.selectAllButton = null;
+    }
+    
     // Список людей
     ctx.font = isMobile ? '10px Arial' : '12px Arial'; // Меньший шрифт для мобильных
     ctx.textAlign = 'left';
     
     people.forEach((person, idx) => {
-        const itemY = panelY + (isMobile ? 40 : 50) + idx * itemHeight; // Меньший отступ для мобильных
+        const listStartY = isMobile && people.length > 0 ? 
+            (selectedPeople.length > 0 ? 55 : 43) : // Больше места если есть кнопка
+            (isMobile ? 40 : 50);
+        const itemY = panelY + listStartY + idx * itemHeight;
         
         // Фон для персонажа (подсвечиваем выделенных)
         if (selectedPeople.includes(idx)) {
@@ -8117,6 +8158,33 @@ function handleTouchMove(e) {
 function handleGameTouch(x, y) {
     // ===== ПРОВЕРКА КЛИКОВ ПО UI ЭЛЕМЕНТАМ (ПРИОРИТЕТ) =====
     
+    // Проверяем клик по кнопке "Выделить всё" (для мобильных) - высший приоритет
+    if (window.selectAllButton) {
+        const btn = window.selectAllButton;
+        if (x >= btn.x && x <= btn.x + btn.width && 
+            y >= btn.y && y <= btn.y + btn.height) {
+            
+            if (btn.allSelected) {
+                // Снимаем выделение со всех
+                selectedPeople = [];
+                console.log('Touch - Снято выделение со всех юнитов');
+            } else {
+                // Выделяем всех юнитов
+                selectedPeople = people.map((_, idx) => idx);
+                console.log('Touch - Выделены все юниты:', selectedPeople.length);
+            }
+            
+            // Очищаем кнопки найма при изменении выделения
+            window.reproductionHouseHireButton = null;
+            window.reproductionHouseHunterButton = null;
+            window.reproductionHouseTechButton = null;
+            window.warriorCampHireButton = null;
+            window.bonfireHireTorchbearerButton = null;
+            
+            return;
+        }
+    }
+    
     // Проверяем клик по кнопке "ОТКРЫТЬ" (для мобильных) - высший приоритет
     if (window.openBuildingModalButton) {
         const btn = window.openBuildingModalButton;
@@ -8463,12 +8531,22 @@ function handleGameTouch(x, y) {
     people.forEach((p, idx) => {
         if (p.uiX && x >= p.uiX && x <= p.uiX + p.uiWidth && 
             y >= p.uiY && y <= p.uiY + p.uiHeight) {
-            // Выделяем этого персонажа
-            selectedPeople = [idx];
+            
+            // На мобиле тап по персонажу снимает его с выделения
+            if (selectedPeople.includes(idx)) {
+                // Убираем персонажа из выделения
+                selectedPeople = selectedPeople.filter(i => i !== idx);
+                console.log('Touch - Снято выделение с персонажа', idx);
+            } else {
+                // Добавляем персонажа к выделению
+                selectedPeople.push(idx);
+                console.log('Touch - Добавлен к выделению персонаж', idx);
+            }
+            
             buildingMode = false;
             buildingType = null;
             
-            // Очищаем кнопки найма при выборе персонажей
+            // Очищаем кнопки найма при изменении выделения
             window.reproductionHouseHireButton = null;
             window.reproductionHouseHunterButton = null;
             window.reproductionHouseTechButton = null;
