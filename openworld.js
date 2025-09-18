@@ -3269,6 +3269,13 @@ function drawPopulation() {
             height: buttonHeight,
             allSelected: allSelected
         };
+        
+        console.log('Mobile - Отрисована кнопка "Выделить всё":', {
+            coords: window.selectAllButton,
+            peopleCount: people.length,
+            selectedCount: selectedPeople.length,
+            showMobileControls: showMobileControls
+        });
     } else {
         window.selectAllButton = null;
     }
@@ -8161,8 +8168,20 @@ function handleGameTouch(x, y) {
     // Проверяем клик по кнопке "Выделить всё" (для мобильных) - высший приоритет
     if (window.selectAllButton) {
         const btn = window.selectAllButton;
+        console.log('Touch - Проверяем кнопку "Выделить всё":', {
+            x, y, 
+            btnX: btn.x, btnY: btn.y, 
+            btnWidth: btn.width, btnHeight: btn.height,
+            inX: x >= btn.x && x <= btn.x + btn.width,
+            inY: y >= btn.y && y <= btn.y + btn.height,
+            allSelected: btn.allSelected,
+            currentSelected: selectedPeople.length
+        });
+        
         if (x >= btn.x && x <= btn.x + btn.width && 
             y >= btn.y && y <= btn.y + btn.height) {
+            
+            console.log('Touch - КЛИК ПО КНОПКЕ "Выделить всё"!');
             
             if (btn.allSelected) {
                 // Снимаем выделение со всех
@@ -8532,15 +8551,15 @@ function handleGameTouch(x, y) {
         if (p.uiX && x >= p.uiX && x <= p.uiX + p.uiWidth && 
             y >= p.uiY && y <= p.uiY + p.uiHeight) {
             
-            // На мобиле тап по персонажу снимает его с выделения
+            // На мобиле тап по персонажу переключает его выделение
             if (selectedPeople.includes(idx)) {
                 // Убираем персонажа из выделения
                 selectedPeople = selectedPeople.filter(i => i !== idx);
-                console.log('Touch - Снято выделение с персонажа', idx);
+                console.log(`Touch - Снято выделение с персонажа ${idx}. Остались выделенными:`, selectedPeople);
             } else {
                 // Добавляем персонажа к выделению
                 selectedPeople.push(idx);
-                console.log('Touch - Добавлен к выделению персонаж', idx);
+                console.log(`Touch - Добавлен к выделению персонаж ${idx}. Теперь выделены:`, selectedPeople);
             }
             
             buildingMode = false;
