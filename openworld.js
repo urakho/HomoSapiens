@@ -6695,17 +6695,19 @@ canvas.addEventListener('mousedown', function(e) {
         if (p.uiX && screenX >= p.uiX && screenX <= p.uiX + p.uiWidth && 
             screenY >= p.uiY && screenY <= p.uiY + p.uiHeight) {
             
-            // Если зажат Ctrl, добавляем/убираем из выделения
-            if (e.ctrlKey) {
+            // Если зажат Ctrl ИЛИ это мобильное устройство, добавляем/убираем из выделения
+            if (e.ctrlKey || showMobileControls) {
                 const index = selectedPeople.indexOf(idx);
                 if (index === -1) {
                     selectedPeople.push(idx); // Добавляем к выделению
                 } else {
                     selectedPeople.splice(index, 1); // Убираем из выделения
                 }
+                console.log('Mouse - Переключено выделение персонажа', idx, 'Выделены:', selectedPeople);
             } else {
-                // Обычный клик - выделяем только этот персонаж
+                // Обычный клик на десктопе - выделяем только этот персонаж
                 selectedPeople = [idx];
+                console.log('Mouse - Выделен только персонаж', idx);
             }
             
             buildingMode = false; // Сбрасываем режим строительства при выборе другого персонажа
@@ -8931,27 +8933,7 @@ function handleTouchEnd(e) {
             mobileControls.buttons[touchData.name].pressed = false;
             mobileControls.touches.delete(touch.identifier);
         } else if (touchData && touchData.type === 'tap') {
-            // Обрабатываем тап как клик мыши для UI элементов
-            const rect = canvas.getBoundingClientRect();
-            const screenX = touch.clientX - rect.left;
-            const screenY = touch.clientY - rect.top;
-            
-            // Создаем синтетическое событие mousedown для обработки кликов по кнопкам зданий
-            const syntheticEvent = {
-                clientX: touch.clientX,
-                clientY: touch.clientY,
-                button: 0, // Левая кнопка мыши
-                preventDefault: () => {}
-            };
-            
-            // Вызываем обработчик mousedown напрямую
-            canvas.dispatchEvent(new MouseEvent('mousedown', {
-                clientX: touch.clientX,
-                clientY: touch.clientY,
-                button: 0,
-                bubbles: true
-            }));
-            
+            // Тап уже обработан в handleGameTouch, просто очищаем данные касания
             mobileControls.touches.delete(touch.identifier);
         }
     }
