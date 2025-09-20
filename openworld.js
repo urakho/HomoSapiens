@@ -308,6 +308,221 @@ function tryPlayMainMenuMusic() {
     }
 }
 
+// Звуковые эффекты для игры
+const woodSound = new Audio();
+woodSound.src = 'sound/wood.ogg';
+woodSound.volume = 0.7;
+woodSound.preload = 'auto';
+woodSound.loop = true; // Зацикливаем звук рубки
+let woodSoundLoaded = false;
+
+woodSound.addEventListener('canplaythrough', function() {
+    woodSoundLoaded = true;
+    console.log('Wood sound loaded successfully');
+});
+
+woodSound.addEventListener('error', function(e) {
+    console.error('Failed to load sound/wood.ogg', e);
+    woodSoundLoaded = false;
+});
+
+// Звук добычи камня
+const stoneSound = new Audio();
+stoneSound.src = 'sound/stone.ogg';
+stoneSound.volume = 0.7;
+stoneSound.preload = 'auto';
+stoneSound.loop = true; // Зацикливаем звук добычи камня
+let stoneSoundLoaded = false;
+
+stoneSound.addEventListener('canplaythrough', function() {
+    stoneSoundLoaded = true;
+    console.log('🪨 Stone sound loaded successfully');
+    console.log('🪨 Stone sound details:', {
+        duration: stoneSound.duration,
+        volume: stoneSound.volume,
+        src: stoneSound.src
+    });
+});
+
+stoneSound.addEventListener('error', function(e) {
+    console.error('🪨 Failed to load sound/stone.ogg', e);
+    stoneSoundLoaded = false;
+});
+
+// Добавляем дополнительные события для отладки
+stoneSound.addEventListener('loadstart', function() {
+    console.log('🪨 Stone sound loading started');
+});
+
+stoneSound.addEventListener('play', function() {
+    console.log('🪨 Stone sound play event fired');
+});
+
+stoneSound.addEventListener('pause', function() {
+    console.log('🪨 Stone sound pause event fired');
+});
+
+stoneSound.addEventListener('ended', function() {
+    console.log('🪨 Stone sound ended event fired');
+});
+
+stoneSound.addEventListener('volumechange', function() {
+    console.log('🪨 Stone sound volume changed to:', stoneSound.volume);
+});
+
+stoneSound.addEventListener('loadeddata', function() {
+    console.log('🪨 Stone sound data loaded');
+});
+
+// Звук сбора яблок
+const appleSound = new Audio();
+appleSound.src = 'sound/apple.ogg';
+appleSound.volume = 0.7;
+appleSound.preload = 'auto';
+appleSound.loop = false; // Не зацикливаем звук сбора яблок (короткий звук)
+let appleSoundLoaded = false;
+
+appleSound.addEventListener('canplaythrough', function() {
+    appleSoundLoaded = true;
+    console.log('🍎 Apple sound loaded successfully');
+    console.log('🍎 Apple sound details:', {
+        duration: appleSound.duration,
+        volume: appleSound.volume,
+        src: appleSound.src
+    });
+});
+
+appleSound.addEventListener('error', function(e) {
+    console.error('🍎 Failed to load sound/apple.ogg', e);
+    appleSoundLoaded = false;
+});
+
+appleSound.addEventListener('loadstart', function() {
+    console.log('🍎 Apple sound loading started');
+});
+
+// Функция для начала звука рубки для выбранного персонажа
+function startWoodSoundForSelectedPerson(personIndex) {
+    // Просто обновляем состояние звука
+    updateWoodSound();
+}
+
+// Функция для остановки звука рубки для персонажа
+function stopWoodSoundForPerson(personIndex) {
+    // Просто обновляем состояние звука
+    updateWoodSound();
+}
+
+// Функция для обновления звука рубки в реальном времени
+let lastWoodSoundState = false; // Для отслеживания изменений состояния
+function updateWoodSound() {
+    // Проверяем, есть ли среди выбранных персонажей те, кто сейчас рубит
+    const selectedChoppersExist = selectedPeople.some(personIndex => {
+        const person = people[personIndex];
+        return person && person.hasAxe && person.choppingTimer > 0 && person.currentBush;
+    });
+    
+    const shouldPlay = selectedChoppersExist && woodSoundLoaded && userHasInteracted;
+    const isPlaying = !woodSound.paused && !woodSound.ended;
+    
+    // Логируем только при изменении состояния
+    if (shouldPlay !== lastWoodSoundState) {
+        lastWoodSoundState = shouldPlay;
+        
+        if (shouldPlay) {
+            console.log('🪵 Selected person started chopping - starting wood sound');
+        } else {
+            console.log('🪵 No selected person chopping - stopping wood sound');
+        }
+    }
+    
+    if (shouldPlay && !isPlaying) {
+        // Нужно запустить звук
+        try {
+            woodSound.currentTime = 0;
+            const playPromise = woodSound.play();
+            if (playPromise !== undefined) {
+                playPromise.catch(e => {
+                    console.log('Wood sound play failed:', e.name);
+                });
+            }
+        } catch (e) {
+            console.log('Error playing wood sound:', e.message);
+        }
+    } else if (!shouldPlay && isPlaying) {
+        // Нужно остановить звук
+        woodSound.pause();
+    }
+}
+
+// Функция для начала звука добычи камня для выбранного персонажа
+function startStoneSoundForSelectedPerson(personIndex) {
+    console.log(`🪨 startStoneSoundForSelectedPerson called for person ${personIndex}, selected: ${selectedPeople.includes(personIndex)}`);
+    // Просто обновляем состояние звука
+    updateStoneSound();
+}
+
+// Функция для остановки звука добычи камня для персонажа
+function stopStoneSoundForPerson(personIndex) {
+    // Просто обновляем состояние звука
+    updateStoneSound();
+}
+
+// Функция для обновления звука добычи камня в реальном времени
+let lastStoneSoundState = false; // Для отслеживания изменений состояния
+function updateStoneSound() {
+    // Проверяем, есть ли среди выбранных персонажей те, кто сейчас собирает камень
+    const selectedMinersExist = selectedPeople.some(personIndex => {
+        const person = people[personIndex];
+        const isMining = person && person.collectingStonePos && person.collectTimer > 0;
+        if (person && person.collectingStonePos) {
+            console.log(`🪨 Person ${personIndex} state: collectingStonePos=${!!person.collectingStonePos}, collectTimer=${person.collectTimer}, mining=${isMining}`);
+        }
+        return isMining;
+    });
+    
+    const shouldPlay = selectedMinersExist && stoneSoundLoaded && userHasInteracted;
+    const isPlaying = !stoneSound.paused && !stoneSound.ended;
+    
+    // Отладочная информация
+    if (selectedPeople.length > 0) {
+        console.log(`🪨 Stone sound check: selectedMinersExist=${selectedMinersExist}, shouldPlay=${shouldPlay}, stoneSoundLoaded=${stoneSoundLoaded}, userHasInteracted=${userHasInteracted}, isPlaying=${isPlaying}`);
+    }
+    
+    // Логируем только при изменении состояния
+    if (shouldPlay !== lastStoneSoundState) {
+        lastStoneSoundState = shouldPlay;
+        
+        if (shouldPlay) {
+            console.log('🪨 Selected person started mining - starting stone sound');
+        } else {
+            console.log('🪨 No selected person mining - stopping stone sound');
+        }
+    }
+    
+    if (shouldPlay && !isPlaying) {
+        // Нужно запустить звук
+        console.log('🪨 Attempting to start stone sound...');
+        try {
+            stoneSound.currentTime = 0;
+            const playPromise = stoneSound.play();
+            if (playPromise !== undefined) {
+                playPromise.then(() => {
+                    console.log('🪨 Stone sound started successfully');
+                }).catch(e => {
+                    console.log('🪨 Stone sound play failed:', e.name, e.message);
+                });
+            }
+        } catch (e) {
+            console.log('🪨 Error playing stone sound:', e.message);
+        }
+    } else if (!shouldPlay && isPlaying) {
+        // Нужно остановить звук
+        console.log('🪨 Stopping stone sound...');
+        stoneSound.pause();
+    }
+}
+
 // Улучшенная функция для обработки первого взаимодействия пользователя
 function handleFirstInteraction() {
     if (!userHasInteracted) {
@@ -2186,11 +2401,11 @@ function isValidPosition(x, y, minDistance, type) {
 
 // Человечки
 let people = [
-    { x: 200, y: 150, target: null, hasAxe: false, choppingTimer: 0, currentBush: null, harvestingTreePos: null, harvestTimer: 0, statusDisplayTimer: 0, type: 'civilian', collectingStonePos: null, collectTimer: 0, lastAction: null, health: 100, maxHealth: 100 },
-    { x: 250, y: 200, target: null, hasAxe: false, choppingTimer: 0, currentBush: null, harvestingTreePos: null, harvestTimer: 0, statusDisplayTimer: 0, type: 'civilian', collectingStonePos: null, collectTimer: 0, lastAction: null, health: 100, maxHealth: 100 },
-    { x: 220, y: 250, target: null, hasAxe: false, choppingTimer: 0, currentBush: null, harvestingTreePos: null, harvestTimer: 0, statusDisplayTimer: 0, type: 'civilian', collectingStonePos: null, collectTimer: 0, lastAction: null, health: 100, maxHealth: 100 },
-    { x: 180, y: 220, target: null, hasAxe: false, choppingTimer: 0, currentBush: null, harvestingTreePos: null, harvestTimer: 0, statusDisplayTimer: 0, type: 'civilian', collectingStonePos: null, collectTimer: 0, lastAction: null, health: 100, maxHealth: 100 },
-    { x: 230, y: 180, target: null, hasAxe: false, choppingTimer: 0, currentBush: null, harvestingTreePos: null, harvestTimer: 0, statusDisplayTimer: 0, type: 'civilian', collectingStonePos: null, collectTimer: 0, lastAction: null, health: 100, maxHealth: 100 }
+    { x: 200, y: 150, target: null, hasAxe: false, choppingTimer: 0, currentBush: null, harvestingTreePos: null, harvestTimer: 0, statusDisplayTimer: 0, type: 'civilian', collectingStonePos: null, collectTimer: 0, lastAction: null, health: 100, maxHealth: 100, targetStone: null },
+    { x: 250, y: 200, target: null, hasAxe: false, choppingTimer: 0, currentBush: null, harvestingTreePos: null, harvestTimer: 0, statusDisplayTimer: 0, type: 'civilian', collectingStonePos: null, collectTimer: 0, lastAction: null, health: 100, maxHealth: 100, targetStone: null },
+    { x: 220, y: 250, target: null, hasAxe: false, choppingTimer: 0, currentBush: null, harvestingTreePos: null, harvestTimer: 0, statusDisplayTimer: 0, type: 'civilian', collectingStonePos: null, collectTimer: 0, lastAction: null, health: 100, maxHealth: 100, targetStone: null },
+    { x: 180, y: 220, target: null, hasAxe: false, choppingTimer: 0, currentBush: null, harvestingTreePos: null, harvestTimer: 0, statusDisplayTimer: 0, type: 'civilian', collectingStonePos: null, collectTimer: 0, lastAction: null, health: 100, maxHealth: 100, targetStone: null },
+    { x: 230, y: 180, target: null, hasAxe: false, choppingTimer: 0, currentBush: null, harvestingTreePos: null, harvestTimer: 0, statusDisplayTimer: 0, type: 'civilian', collectingStonePos: null, collectTimer: 0, lastAction: null, health: 100, maxHealth: 100, targetStone: null }
 ];
 let selectedPeople = []; // Массив индексов выделенных персонажей
 
@@ -5013,7 +5228,7 @@ function drawEraNotifications() {
 
 // Анимация движения человечков
 function updatePeople() {
-    people.forEach((p) => {
+    people.forEach((p, idx) => {
         // Воины - боевая логика против тигров
         if (p.type === 'warrior') {
             // Инициализируем боевые свойства если их нет
@@ -5632,6 +5847,23 @@ function updatePeople() {
                     currentTree.food--;
                     resources.food++;
                     
+                    // Воспроизводим звук сбора яблок
+                    if (appleSoundLoaded && userHasInteracted) {
+                        try {
+                            appleSound.currentTime = 0;
+                            const playPromise = appleSound.play();
+                            if (playPromise !== undefined) {
+                                playPromise.then(() => {
+                                    console.log('🍎 Apple sound played successfully');
+                                }).catch(e => {
+                                    console.log('🍎 Apple sound play failed:', e.name, e.message);
+                                });
+                            }
+                        } catch (e) {
+                            console.log('🍎 Error playing apple sound:', e.message);
+                        }
+                    }
+                    
                     // Если дерево опустошено, запускаем таймер восстановления
                     if (currentTree.food === 0) {
                         currentTree.regenerationTimer = 1800; // 30 секунд при 60 FPS
@@ -5666,15 +5898,15 @@ function updatePeople() {
             }
         }
         
-        // Автоматический сбор камней (только для civilians)
-        if (p.type === 'civilian' && !p.hasAxe && !p.target && !p.harvestingTreePos) {
+        // Автоматический поиск камней для сбора (только для civilians)
+        if (p.type === 'civilian' && !p.target && !p.harvestingTreePos) {
             for (let stone of stones) {
                 const distToStone = Math.sqrt((p.x - stone.x) ** 2 + (p.y - stone.y) ** 2);
-                if (distToStone < stone.r && stone.amount > 0) {
-                    // Начинаем сбор камней только если еще не собираем
+                if (distToStone < stone.r + 50 && stone.amount > 0) { // Расширенный радиус обнаружения
+                    // Устанавливаем камень как цель для движения
                     if (!p.collectingStonePos) {
-                        p.collectingStonePos = {x: stone.x, y: stone.y}; // Сохраняем позицию вместо ссылки
-                        p.collectTimer = 90; // 1.5 секунды при 60 FPS (камни собирать дольше)
+                        p.target = {x: stone.x, y: stone.y};
+                        p.targetStone = {x: stone.x, y: stone.y}; // Запоминаем какой камень является целью
                     }
                     break;
                 }
@@ -5703,6 +5935,7 @@ function updatePeople() {
                     }
                 }
                 // Завершаем сбор только после получения камня
+                stopStoneSoundForPerson(idx);
                 p.collectingStonePos = null;
                 p.collectTimer = 0;
                 // Устанавливаем таймер отображения статуса на 2 секунды
@@ -5721,11 +5954,13 @@ function updatePeople() {
                 const distToStone = Math.sqrt((p.x - currentStone.x) ** 2 + (p.y - currentStone.y) ** 2);
                 if (distToStone >= currentStone.r || currentStone.amount === 0) {
                     // Персонаж ушел от камня или камни закончились - прекращаем сбор
+                    stopStoneSoundForPerson(idx);
                     p.collectingStonePos = null;
                     p.collectTimer = 0;
                 }
             } else {
                 // Камень исчез - прекращаем сбор
+                stopStoneSoundForPerson(idx);
                 p.collectingStonePos = null;
                 p.collectTimer = 0;
             }
@@ -5827,6 +6062,33 @@ function updatePeople() {
                     p.hasAxe = true;
                     p.choppingTimer = 120; // 2 секунды при 60 FPS
                     p.currentBush = targetBush;
+                    
+                    // Запускаем непрерывный звук рубки для выбранного персонажа
+                    startWoodSoundForSelectedPerson(idx);
+                } else if (p.targetStone && p.type === 'civilian') {
+                    // Проверить, есть ли камень в целевой позиции
+                    let targetStone = null;
+                    for (let stone of stones) {
+                        const distToStone = Math.sqrt((p.targetStone.x - stone.x) ** 2 + (p.targetStone.y - stone.y) ** 2);
+                        if (distToStone < stone.r && stone.amount > 0) {
+                            targetStone = stone;
+                            break;
+                        }
+                    }
+                    
+                    if (targetStone) {
+                        // Начинаем сбор камней
+                        console.log(`🪨 Person ${idx} starting stone collection!`);
+                        p.collectingStonePos = {x: targetStone.x, y: targetStone.y};
+                        p.collectTimer = 90; // 1.5 секунды при 60 FPS
+                        
+                        // Запускаем непрерывный звук добычи камня для выбранного персонажа
+                        startStoneSoundForSelectedPerson(idx);
+                    }
+                    
+                    p.x = p.target.x;
+                    p.y = p.target.y;
+                    p.targetStone = null;
                 } else {
                     p.x = p.target.x;
                     p.y = p.target.y;
@@ -5840,6 +6102,7 @@ function updatePeople() {
             const distToBush = Math.sqrt((p.x - p.currentBush.x) ** 2 + (p.y - p.currentBush.y) ** 2);
             if (distToBush > p.currentBush.r || p.currentBush.durability <= 0) {
                 // Человек вышел за область куста или куст срублен - убрать топор
+                stopWoodSoundForPerson(idx);
                 p.hasAxe = false;
                 p.choppingTimer = 0;
                 p.currentBush = null;
@@ -5852,10 +6115,13 @@ function updatePeople() {
             if (p.choppingTimer === 0) {
                 p.currentBush.durability--;
                 resources.wood += 1; // Получаем 1 дерево за каждый удар
+                totalWoodCollected += 1; // Обновляем общий счетчик дерева
+                
                 if (p.currentBush.durability > 0) {
                     p.choppingTimer = 120; // Следующий удар через 2 секунды
                 } else {
-                    // Куст срублен
+                    // Куст срублен - останавливаем звук
+                    stopWoodSoundForPerson(idx);
                     p.hasAxe = false;
                     p.currentBush.durability = 0;
                     p.currentBush = null;
@@ -6252,6 +6518,9 @@ canvas.addEventListener('mousedown', function(e) {
     // Правая кнопка мыши - сбрасываем выделение
     if (e.button === 2) {
         selectedPeople = [];
+        // Обновляем звук рубки после сброса выделения
+        updateWoodSound();
+        updateStoneSound();
         return;
     }
     
@@ -8171,6 +8440,12 @@ function gameLoop() {
             updateSteppeMammoths(); // Обновляем степных мамонтов
             updateNeanderthals();
             updateCamera();
+            
+            // Обновляем звук рубки дерева
+            updateWoodSound();
+            
+            // Обновляем звук добычи камня
+            updateStoneSound();
         
         // Обновление таймера информации о кусте
         if (bushInfoTimer > 0) {
@@ -8734,6 +9009,10 @@ function handleGameTouch(x, y) {
                 console.log(`Touch - Добавлен к выделению персонаж ${idx}. Теперь выделены:`, selectedPeople);
             }
             
+            // Обновляем звук рубки после изменения выделения
+            updateWoodSound();
+            updateStoneSound();
+            
             buildingMode = false;
             buildingType = null;
             
@@ -8939,6 +9218,9 @@ function handleGameTouch(x, y) {
         const dist = Math.sqrt((worldX - person.x) ** 2 + (worldY - person.y) ** 2);
         if (dist < 25) {
             selectedPeople = [i];
+            // Обновляем звук рубки после изменения выделения
+            updateWoodSound();
+            updateStoneSound();
             found = true;
             break;
         }
