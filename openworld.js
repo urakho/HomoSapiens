@@ -241,6 +241,111 @@ mainMenuImage.onerror = function(e) {
     mainMenuImageLoaded = false;
 };
 
+// Загружаем фоновую музыку для главного меню
+const mainMenuMusic = new Audio();
+mainMenuMusic.src = 'sound/tribal_drums_loud.wav';
+mainMenuMusic.loop = true;
+mainMenuMusic.volume = 0.5; // Средняя громкость
+mainMenuMusic.preload = 'auto'; // Предзагрузка аудио
+let mainMenuMusicLoaded = false;
+let mainMenuMusicPlaying = false;
+let userHasInteracted = false; // Флаг для отслеживания первого взаимодействия
+let autoplayAttempted = false; // Флаг попытки автозапуска
+
+// Множественные события для лучшего определения готовности
+mainMenuMusic.addEventListener('loadeddata', function() {
+    console.log('Main menu music - data loaded');
+    if (!autoplayAttempted) {
+        tryPlayMainMenuMusic();
+    }
+});
+
+mainMenuMusic.addEventListener('canplay', function() {
+    console.log('Main menu music - can play');
+    if (!autoplayAttempted) {
+        tryPlayMainMenuMusic();
+    }
+});
+
+mainMenuMusic.addEventListener('canplaythrough', function() {
+    mainMenuMusicLoaded = true;
+    console.log('Main menu music loaded successfully - can play through');
+    
+    // Попытка автозапуска если мы в меню
+    if (!autoplayAttempted) {
+        tryPlayMainMenuMusic();
+    }
+});
+
+mainMenuMusic.addEventListener('error', function(e) {
+    console.error('Failed to load sound/tribal_drums_loud.wav', e);
+    mainMenuMusicLoaded = false;
+});
+
+// Улучшенная функция для запуска музыки главного меню
+function tryPlayMainMenuMusic() {
+    if (!mainMenuMusicPlaying && gameState === 'menu') {
+        autoplayAttempted = true;
+        console.log('Attempting to play main menu music...');
+        
+        try {
+            const playPromise = mainMenuMusic.play();
+            if (playPromise !== undefined) {
+                playPromise.then(() => {
+                    mainMenuMusicPlaying = true;
+                    console.log('✅ Main menu music started successfully!');
+                }).catch(e => {
+                    console.log('⚠️ Music autoplay blocked by browser:', e.name);
+                    console.log('💡 Music will start after first user interaction');
+                    // Сбрасываем флаг, чтобы попробовать еще раз при взаимодействии
+                    autoplayAttempted = false;
+                });
+            }
+        } catch (e) {
+            console.log('❌ Error playing music:', e.message);
+            autoplayAttempted = false;
+        }
+    }
+}
+
+// Улучшенная функция для обработки первого взаимодействия пользователя
+function handleFirstInteraction() {
+    if (!userHasInteracted) {
+        userHasInteracted = true;
+        console.log('🎮 First user interaction detected');
+        
+        // Запускаем музыку при первом взаимодействии
+        if (gameState === 'menu' && !mainMenuMusicPlaying) {
+            console.log('🎵 Starting music after user interaction...');
+            // Сбрасываем флаг автозапуска, чтобы функция сработала
+            autoplayAttempted = false;
+            tryPlayMainMenuMusic();
+        }
+    }
+}
+
+// Функция для проверки возможности автозапуска медиа
+async function checkAutoplaySupport() {
+    try {
+        // Создаем тестовый аудио элемент
+        const testAudio = new Audio();
+        testAudio.volume = 0;
+        testAudio.muted = true;
+        
+        // Пытаемся воспроизвести
+        const canAutoplay = await testAudio.play().then(() => {
+            testAudio.pause();
+            return true;
+        }).catch(() => false);
+        
+        console.log('🔊 Autoplay support:', canAutoplay ? '✅ Supported' : '❌ Blocked');
+        return canAutoplay;
+    } catch (e) {
+        console.log('🔊 Autoplay check failed:', e.message);
+        return false;
+    }
+}
+
 // Устанавливаем размер canvas на весь экран
 function resizeCanvas() {
     canvas.width = window.innerWidth;
@@ -450,6 +555,23 @@ setTimeout(checkImageAvailability, 1000);
 // Устанавливаем размер при загрузке и при изменении размера окна
 resizeCanvas();
 window.addEventListener('resize', resizeCanvas);
+
+// Дополнительные попытки запуска музыки при фокусе на окне
+window.addEventListener('focus', function() {
+    console.log('🎯 Window focused');
+    if (gameState === 'menu' && !mainMenuMusicPlaying && !autoplayAttempted) {
+        console.log('🎵 Attempting music autoplay on window focus...');
+        tryPlayMainMenuMusic();
+    }
+});
+
+// Попытка запуска при изменении видимости страницы
+document.addEventListener('visibilitychange', function() {
+    if (!document.hidden && gameState === 'menu' && !mainMenuMusicPlaying && !autoplayAttempted) {
+        console.log('🎵 Attempting music autoplay on visibility change...');
+        setTimeout(() => tryPlayMainMenuMusic(), 100);
+    }
+});
 
 // Ресурсы
 let resources = {
@@ -6075,6 +6197,10 @@ function handlePauseMenuClick(screenX, screenY) {
         if (screenX >= mainMenuBtn.x && screenX <= mainMenuBtn.x + mainMenuBtn.width &&
             screenY >= mainMenuBtn.y && screenY <= mainMenuBtn.y + mainMenuBtn.height) {
             saveGameState(); // Автоматически сохраняем перед выходом
+            
+            // Сбрасываем флаг воспроизведения музыки главного меню для её возобновления
+            mainMenuMusicPlaying = false;
+            
             gameState = 'menu';
             return true;
         }
@@ -6094,6 +6220,9 @@ canvas.addEventListener('contextmenu', function(e) {
 });
 
 canvas.addEventListener('mousedown', function(e) {
+    // Обрабатываем первое взаимодействие пользователя
+    handleFirstInteraction();
+    
     const rect = canvas.getBoundingClientRect();
     const screenX = e.clientX - rect.left;
     const screenY = e.clientY - rect.top;
@@ -7698,6 +7827,14 @@ function generateInitialStones() {
 }
 
 function startNewGame() {
+    // Останавливаем музыку главного меню
+    if (mainMenuMusicPlaying && mainMenuMusicLoaded) {
+        mainMenuMusic.pause();
+        mainMenuMusic.currentTime = 0;
+        mainMenuMusicPlaying = false;
+        console.log('Main menu music stopped');
+    }
+    
     // Сброс всех игровых переменных к начальному состоянию
     people = [];
     selectedPeople = [];
@@ -7784,6 +7921,14 @@ function startNewGame() {
 }
 
 function continueGame() {
+    // Останавливаем музыку главного меню
+    if (mainMenuMusicPlaying && mainMenuMusicLoaded) {
+        mainMenuMusic.pause();
+        mainMenuMusic.currentTime = 0;
+        mainMenuMusicPlaying = false;
+        console.log('Main menu music stopped');
+    }
+    
     console.log('Попытка загрузить сохранение...');
     if (loadGameState()) {
         console.log('Сохранение загружено успешно, переключаемся в игру');
@@ -7956,18 +8101,26 @@ function drawMainMenu() {
     ctx.fillText('Управляйте племенем первобытных людей', canvas.width / 2, 540);
     ctx.fillText('Собирайте ресурсы, стройте жилища, развивайтесь!', canvas.width / 2, 560);
     
+    // Уведомление о музыке (если она еще не включена)
+    if (mainMenuMusicLoaded && !mainMenuMusicPlaying && !userHasInteracted) {
+        ctx.font = 'bold 14px Arial';
+        ctx.fillStyle = '#f39c12';
+        ctx.fillText('🔊 Кликните в любом месте для включения музыки', canvas.width / 2, 585);
+    }
+    
     // Информация о текущем режиме управления
     ctx.font = '12px Arial';
     ctx.fillStyle = '#95a5a6';
+    const controlsY = (mainMenuMusicLoaded && !mainMenuMusicPlaying && !userHasInteracted) ? 610 : 590;
     if (showMobileControls) {
-        ctx.fillText('Включены виртуальные кнопки и джойстик', canvas.width / 2, 590);
+        ctx.fillText('Включены виртуальные кнопки и джойстик', canvas.width / 2, controlsY);
         if (isMobile) {
-            ctx.fillText('(автоопределение мобильного устройства)', canvas.width / 2, 605);
+            ctx.fillText('(автоопределение мобильного устройства)', canvas.width / 2, controlsY + 15);
         }
     } else {
-        ctx.fillText('Используйте клавиатуру: WASD - движение, Space - атака, E - действие', canvas.width / 2, 590);
+        ctx.fillText('Используйте клавиатуру: WASD - движение, Space - атака, E - действие', canvas.width / 2, controlsY);
         if (!isMobile) {
-            ctx.fillText('(автоопределение настольного устройства)', canvas.width / 2, 605);
+            ctx.fillText('(автоопределение настольного устройства)', canvas.width / 2, controlsY + 15);
         }
     }
     
@@ -7997,8 +8150,19 @@ function drawMainMenu() {
 function gameLoop() {
     try {
         if (gameState === 'menu') {
+            // Простая попытка запуска музыки если пользователь взаимодействовал
+            if (userHasInteracted && mainMenuMusicLoaded && !mainMenuMusicPlaying) {
+                tryPlayMainMenuMusic();
+            }
             drawMainMenu();
         } else if (gameState === 'playing') {
+            // Останавливаем музыку главного меню во время игры
+            if (mainMenuMusicPlaying) {
+                mainMenuMusic.pause();
+                mainMenuMusicPlaying = false;
+                console.log('Main menu music stopped during gameplay');
+            }
+            
             updatePeople();
             updateFlyingSpears(); // Обновляем летящие копья
             updateSabertoothTigers();
@@ -8039,6 +8203,9 @@ function gameLoop() {
 
 // Обработчик клавиш для сохранения игры
 document.addEventListener('keydown', function(e) {
+    // Обрабатываем первое взаимодействие пользователя
+    handleFirstInteraction();
+    
     if (gameState === 'playing') {
         // Сохранение по Ctrl+S или F5
         if ((e.ctrlKey && e.key === 's') || e.key === 'F5') {
@@ -8097,6 +8264,9 @@ function drawMobileButtons() {
 // Обработчики touch событий для мобильного управления
 function handleTouchStart(e) {
     e.preventDefault();
+    
+    // Обрабатываем первое взаимодействие пользователя
+    handleFirstInteraction();
     
     // В главном меню обрабатываем touch события всегда (для кнопок меню)
     if (gameState === 'menu') {
@@ -8968,6 +9138,17 @@ canvas.addEventListener('touchcancel', handleTouchEnd, { passive: false });
 document.addEventListener('DOMContentLoaded', function() {
     console.log('DOM loaded, starting game loop');
     gameLoop();
+    
+    // Проверяем поддержку автозапуска
+    checkAutoplaySupport();
+    
+    // Пытаемся запустить музыку через небольшую задержку
+    setTimeout(() => {
+        if (gameState === 'menu' && !mainMenuMusicPlaying) {
+            console.log('🎵 Attempting autoplay after DOM load...');
+            tryPlayMainMenuMusic();
+        }
+    }, 500);
 });
 
 // Если DOM уже загружен (на случай поздней загрузки скрипта)
@@ -8977,5 +9158,16 @@ if (document.readyState === 'loading') {
     // DOM уже загружен, запускаем сразу
     console.log('DOM already loaded, starting game loop immediately');
     gameLoop();
+    
+    // Проверяем поддержку автозапуска
+    checkAutoplaySupport();
+    
+    // Пытаемся запустить музыку через небольшую задержку
+    setTimeout(() => {
+        if (gameState === 'menu' && !mainMenuMusicPlaying) {
+            console.log('🎵 Attempting autoplay after immediate start...');
+            tryPlayMainMenuMusic();
+        }
+    }, 500);
 }
 
