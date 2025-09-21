@@ -379,7 +379,7 @@ const appleSound = new Audio();
 appleSound.src = 'sound/apple.ogg';
 appleSound.volume = 0.7;
 appleSound.preload = 'auto';
-appleSound.loop = false; // Не зацикливаем звук сбора яблок (короткий звук)
+appleSound.loop = true; // Зацикливаем звук сбора яблок (как у дерева)
 let appleSoundLoaded = false;
 
 appleSound.addEventListener('canplaythrough', function() {
@@ -520,6 +520,72 @@ function updateStoneSound() {
         // Нужно остановить звук
         console.log('🪨 Stopping stone sound...');
         stoneSound.pause();
+    }
+}
+
+// Функции для управления звуком сбора яблок
+function startAppleSoundForSelectedPerson(personIndex) {
+    // Просто обновляем состояние звука
+    updateAppleSound();
+}
+
+function stopAppleSoundForPerson(personIndex) {
+    // Просто обновляем состояние звука
+    updateAppleSound();
+}
+
+// Функция для обновления звука сбора яблок в реальном времени
+let lastAppleSoundState = false; // Для отслеживания изменений состояния
+function updateAppleSound() {
+    // Проверяем, есть ли среди выбранных персонажей те, кто сейчас собирает яблоки
+    const selectedHarvestersExist = selectedPeople.some(personIndex => {
+        const person = people[personIndex];
+        const isHarvesting = person && person.harvestingTreePos && person.harvestTimer > 0;
+        if (person && person.harvestingTreePos) {
+            console.log(`🍎 Person ${personIndex} state: harvestingTreePos=${!!person.harvestingTreePos}, harvestTimer=${person.harvestTimer}, harvesting=${isHarvesting}`);
+        }
+        return isHarvesting;
+    });
+    
+    const shouldPlay = selectedHarvestersExist && appleSoundLoaded && userHasInteracted;
+    const isPlaying = !appleSound.paused && !appleSound.ended;
+    
+    // Отладочная информация
+    if (selectedPeople.length > 0) {
+        console.log(`🍎 Apple sound check: selectedHarvestersExist=${selectedHarvestersExist}, shouldPlay=${shouldPlay}, appleSoundLoaded=${appleSoundLoaded}, userHasInteracted=${userHasInteracted}, isPlaying=${isPlaying}`);
+    }
+    
+    // Логируем только при изменении состояния
+    if (shouldPlay !== lastAppleSoundState) {
+        lastAppleSoundState = shouldPlay;
+        
+        if (shouldPlay) {
+            console.log('🍎 Selected person started harvesting - starting apple sound');
+        } else {
+            console.log('🍎 No selected person harvesting - stopping apple sound');
+        }
+    }
+    
+    if (shouldPlay && !isPlaying) {
+        // Нужно запустить звук
+        console.log('🍎 Attempting to start apple sound...');
+        try {
+            appleSound.currentTime = 0;
+            const playPromise = appleSound.play();
+            if (playPromise !== undefined) {
+                playPromise.then(() => {
+                    console.log('🍎 Apple sound started successfully');
+                }).catch(e => {
+                    console.log('🍎 Apple sound play failed:', e.name, e.message);
+                });
+            }
+        } catch (e) {
+            console.log('🍎 Error playing apple sound:', e.message);
+        }
+    } else if (!shouldPlay && isPlaying) {
+        // Нужно остановить звук
+        console.log('🍎 Stopping apple sound...');
+        appleSound.pause();
     }
 }
 
@@ -5796,6 +5862,7 @@ function updatePeople() {
                     p.y += fleeY;
                     
                     // Прерываем сбор ресурсов во время бегства
+                    stopAppleSoundForPerson(idx);
                     p.harvestingTreePos = null;
                     p.harvestTimer = 0;
                     p.hasAxe = false;
@@ -5825,8 +5892,12 @@ function updatePeople() {
                     if (distToTree < tree.r && tree.food > 0) {
                         // Начинаем сбор пищи только если еще не собираем
                         if (!p.harvestingTreePos) {
+                            console.log(`🍎 Person ${idx} starting apple harvest!`);
                             p.harvestingTreePos = {x: tree.x, y: tree.y}; // Сохраняем позицию вместо ссылки
                             p.harvestTimer = 60; // 1 секунда при 60 FPS
+                            
+                            // Запускаем звук сбора яблок для выбранного персонажа
+                            startAppleSoundForSelectedPerson(idx);
                         }
                         break;
                     }
@@ -5847,29 +5918,9 @@ function updatePeople() {
                     currentTree.food--;
                     resources.food++;
                     
-                    // Воспроизводим звук сбора яблок
-                    if (appleSoundLoaded && userHasInteracted) {
-                        try {
-                            appleSound.currentTime = 0;
-                            const playPromise = appleSound.play();
-                            if (playPromise !== undefined) {
-                                playPromise.then(() => {
-                                    console.log('🍎 Apple sound played successfully');
-                                }).catch(e => {
-                                    console.log('🍎 Apple sound play failed:', e.name, e.message);
-                                });
-                            }
-                        } catch (e) {
-                            console.log('🍎 Error playing apple sound:', e.message);
-                        }
-                    }
-                    
-                    // Если дерево опустошено, запускаем таймер восстановления
-                    if (currentTree.food === 0) {
-                        currentTree.regenerationTimer = 1800; // 30 секунд при 60 FPS
-                    }
                 }
                 // Завершаем сбор только после получения еды
+                stopAppleSoundForPerson(idx);
                 p.harvestingTreePos = null;
                 p.harvestTimer = 0;
                 // Устанавливаем таймер отображения статуса на 2 секунды
@@ -5888,11 +5939,13 @@ function updatePeople() {
                 const distToTree = Math.sqrt((p.x - currentTree.x) ** 2 + (p.y - currentTree.y) ** 2);
                 if (distToTree >= currentTree.r || currentTree.food === 0) {
                     // Персонаж ушел от дерева или дерево пустое - прекращаем сбор
+                    stopAppleSoundForPerson(idx);
                     p.harvestingTreePos = null;
                     p.harvestTimer = 0;
                 }
             } else {
                 // Дерево исчезло - прекращаем сбор
+                stopAppleSoundForPerson(idx);
                 p.harvestingTreePos = null;
                 p.harvestTimer = 0;
             }
@@ -6518,9 +6571,10 @@ canvas.addEventListener('mousedown', function(e) {
     // Правая кнопка мыши - сбрасываем выделение
     if (e.button === 2) {
         selectedPeople = [];
-        // Обновляем звук рубки после сброса выделения
+        // Обновляем звук после сброса выделения
         updateWoodSound();
         updateStoneSound();
+        updateAppleSound();
         return;
     }
     
@@ -7430,6 +7484,40 @@ function updateSabertoothTigers() {
     });
 }
 
+// Функция для предотвращения коллизий между животными
+function preventAnimalCollisions(animal, allAnimals, minDistance = 30) {
+    const separation = { x: 0, y: 0 };
+    let neighbors = 0;
+    
+    // Проверяем коллизии со всеми другими животными
+    allAnimals.forEach(otherAnimal => {
+        if (otherAnimal === animal || !otherAnimal || otherAnimal.health <= 0) return;
+        
+        const dx = animal.x - otherAnimal.x;
+        const dy = animal.y - otherAnimal.y;
+        const distance = Math.sqrt(dx * dx + dy * dy);
+        
+        // Если животные слишком близко
+        if (distance < minDistance && distance > 0) {
+            neighbors++;
+            // Вычисляем силу отталкивания
+            const pushForce = (minDistance - distance) / minDistance;
+            separation.x += (dx / distance) * pushForce;
+            separation.y += (dy / distance) * pushForce;
+        }
+    });
+    
+    // Применяем силу разделения
+    if (neighbors > 0) {
+        separation.x /= neighbors;
+        separation.y /= neighbors;
+        
+        // Перемещаем животное
+        animal.x += separation.x * 2; // Коэффициент силы отталкивания
+        animal.y += separation.y * 2;
+    }
+}
+
 function updateDeer() {
     deer.forEach(deerAnimal => {
         // Проверяем если олень мертв или не существует
@@ -7534,6 +7622,10 @@ function updateDeer() {
                 }
             }
         }
+        
+        // Предотвращаем коллизии с другими животными
+        const allAnimals = [...deer, ...mammoths, ...steppeMammoths];
+        preventAnimalCollisions(deerAnimal, allAnimals, 35);
     });
 }
 
@@ -7684,6 +7776,10 @@ function updateMammoths() {
                 }
             }
         }
+        
+        // Предотвращаем коллизии с другими животными
+        const allAnimals = [...deer, ...mammoths, ...steppeMammoths];
+        preventAnimalCollisions(mammoth, allAnimals, 50); // Больший радиус для мамонтов
     });
 }
 
@@ -7825,6 +7921,10 @@ function updateSteppeMammoths() {
                 }
             }
         }
+        
+        // Предотвращаем коллизии с другими животными
+        const allAnimals = [...deer, ...mammoths, ...steppeMammoths];
+        preventAnimalCollisions(mammoth, allAnimals, 60); // Еще больший радиус для степных мамонтов
     });
 }
 
@@ -8446,6 +8546,9 @@ function gameLoop() {
             
             // Обновляем звук добычи камня
             updateStoneSound();
+            
+            // Обновляем звук сбора яблок
+            updateAppleSound();
         
         // Обновление таймера информации о кусте
         if (bushInfoTimer > 0) {
@@ -9009,9 +9112,10 @@ function handleGameTouch(x, y) {
                 console.log(`Touch - Добавлен к выделению персонаж ${idx}. Теперь выделены:`, selectedPeople);
             }
             
-            // Обновляем звук рубки после изменения выделения
+            // Обновляем звук после изменения выделения
             updateWoodSound();
             updateStoneSound();
+            updateAppleSound();
             
             buildingMode = false;
             buildingType = null;
@@ -9218,9 +9322,10 @@ function handleGameTouch(x, y) {
         const dist = Math.sqrt((worldX - person.x) ** 2 + (worldY - person.y) ** 2);
         if (dist < 25) {
             selectedPeople = [i];
-            // Обновляем звук рубки после изменения выделения
+            // Обновляем звук после изменения выделения
             updateWoodSound();
             updateStoneSound();
+            updateAppleSound();
             found = true;
             break;
         }
