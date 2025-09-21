@@ -1198,13 +1198,7 @@ function drawCave(cave) {
         const imageWidth = cave.width * 2;
         const imageHeight = cave.height * 2;
         
-        // Рисуем тень под пещерой
-        ctx.fillStyle = 'rgba(0, 0, 0, 0.3)';
-        ctx.beginPath();
-        ctx.ellipse(5, imageHeight * 0.4, imageWidth * 0.4, imageHeight * 0.1, 0, 0, Math.PI * 2);
-        ctx.fill();
-        
-        // Рисуем изображение пещеры
+        // Рисуем изображение пещеры (убрали тень)
         ctx.drawImage(caveImage, 
                      -imageWidth / 2, -imageHeight / 2, 
                      imageWidth, imageHeight);
