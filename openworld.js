@@ -5675,20 +5675,38 @@ function updatePeople() {
                         p.huntTarget.health -= p.damage;
                         p.lastAttack = currentTime;
                         
-                        // Проверяем смерть оленя
+                        // Проверяем смерть цели охоты
                         if (p.huntTarget.health <= 0) {
-                            // Создаем тушу оленя
-                            deerCarcasses.push({
-                                x: p.huntTarget.x,
-                                y: p.huntTarget.y,
-                                food: 15, // Количество пищи в туше
-                                maxFood: 15
-                            });
-                            
-                            // Удаляем оленя из массива
+                            // Проверяем тип убитого животного и создаем соответствующую тушу
                             const deerIndex = deer.indexOf(p.huntTarget);
+                            const mammothIndex = mammoths.indexOf(p.huntTarget);
+                            const steppeMammothIndex = steppeMammoths.indexOf(p.huntTarget);
+                            
                             if (deerIndex > -1) {
+                                // Создаем тушу оленя
+                                deerCarcasses.push({
+                                    x: p.huntTarget.x,
+                                    y: p.huntTarget.y,
+                                    food: 15, // Количество пищи в туше
+                                    maxFood: 15
+                                });
                                 deer.splice(deerIndex, 1);
+                            } else if (mammothIndex > -1) {
+                                // Создаем тушу мамонта
+                                mammothCarcasses.push({
+                                    x: p.huntTarget.x,
+                                    y: p.huntTarget.y,
+                                    food: 75 // 75 единиц мяса
+                                });
+                                mammoths.splice(mammothIndex, 1);
+                            } else if (steppeMammothIndex > -1) {
+                                // Создаем тушу степного мамонта
+                                steppeMammothCarcasses.push({
+                                    x: p.huntTarget.x,
+                                    y: p.huntTarget.y,
+                                    food: 200 // 200 единиц мяса
+                                });
+                                steppeMammoths.splice(steppeMammothIndex, 1);
                             }
                             
                             p.huntTarget = null;
@@ -9397,10 +9415,18 @@ function handleGameTouch(x, y) {
             const distToMammoth = Math.sqrt((worldX - mammoth.x) ** 2 + (worldY - mammoth.y) ** 2);
             if (distToMammoth < 50) {
                 selectedPeople.forEach(personIdx => {
-                    if (people[personIdx] && people[personIdx].type === 'hunter') {
-                        people[personIdx].huntTarget = mammoth;
-                        people[personIdx].target = { x: mammoth.x, y: mammoth.y };
-                        people[personIdx].butcherTarget = null;
+                    if (people[personIdx]) {
+                        // Hunters могут охотиться на мамонтов
+                        if (people[personIdx].type === 'hunter') {
+                            people[personIdx].huntTarget = mammoth;
+                            people[personIdx].target = { x: mammoth.x, y: mammoth.y };
+                            people[personIdx].butcherTarget = null;
+                        }
+                        // Все остальные типы (воины, лучники и т.д.) атакуют мамонтов в бою
+                        else if (people[personIdx].type === 'warrior' || people[personIdx].type === 'archer' || people[personIdx].type === 'spearman' || people[personIdx].type === 'torchbearer') {
+                            people[personIdx].combatTarget = mammoth;
+                            people[personIdx].target = { x: mammoth.x, y: mammoth.y };
+                        }
                     }
                 });
                 return;
@@ -9412,10 +9438,18 @@ function handleGameTouch(x, y) {
             const distToSteppeMammoth = Math.sqrt((worldX - steppeMammoth.x) ** 2 + (worldY - steppeMammoth.y) ** 2);
             if (distToSteppeMammoth < 60) {
                 selectedPeople.forEach(personIdx => {
-                    if (people[personIdx] && people[personIdx].type === 'hunter') {
-                        people[personIdx].huntTarget = steppeMammoth;
-                        people[personIdx].target = { x: steppeMammoth.x, y: steppeMammoth.y };
-                        people[personIdx].butcherTarget = null;
+                    if (people[personIdx]) {
+                        // Hunters могут охотиться на степных мамонтов
+                        if (people[personIdx].type === 'hunter') {
+                            people[personIdx].huntTarget = steppeMammoth;
+                            people[personIdx].target = { x: steppeMammoth.x, y: steppeMammoth.y };
+                            people[personIdx].butcherTarget = null;
+                        }
+                        // Все остальные типы (воины, лучники и т.д.) атакуют степных мамонтов в бою
+                        else if (people[personIdx].type === 'warrior' || people[personIdx].type === 'archer' || people[personIdx].type === 'spearman' || people[personIdx].type === 'torchbearer') {
+                            people[personIdx].combatTarget = steppeMammoth;
+                            people[personIdx].target = { x: steppeMammoth.x, y: steppeMammoth.y };
+                        }
                     }
                 });
                 return;
